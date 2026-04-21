@@ -5,14 +5,14 @@ using Vikare.Entities.Controllers;
 namespace Vikare.Entities.States
 {
     /// <summary>
-    /// Moves the entity at <see cref="IMovable.MaxSpeed"/> in the direction of the most-recent <see cref="MoveIntent"/>.
+    /// Moves the entity at <see cref="IMovable.MaxSprintSpeed"/> in the direction of the most-recent <see cref="MoveIntent"/>.
     /// </summary>
-    public sealed class WalkingState : IState
+    public sealed class SprintingState : IState
     {
         /// <summary>
-        /// Name of the walk animation clip; must match a clip in the entity's animation library.
+        /// Name of the sprint animation clip; must match a clip in the entity's animation library.
         /// </summary>
-        private const string WalkAnimationName = "walk";
+        private const string SprintAnimationName = "sprint";
 
         /// <summary>
         /// Most-recently received movement direction from the controller. Reset to zero on entry
@@ -24,7 +24,7 @@ namespace Vikare.Entities.States
         public void Enter(IStateContext context)
         {
             _currentDirection = Vector2.Zero;
-            context.As<IAnimated>()?.PlayAnimation(WalkAnimationName);
+            context.As<IAnimated>()?.PlayAnimation(SprintAnimationName);
         }
 
         /// <inheritdoc/>
@@ -43,12 +43,11 @@ namespace Vikare.Entities.States
             IMovable? movable = context.As<IMovable>();
             if (movable is not null)
             {
-                movable.MovementVelocity = _currentDirection.Normalized() * movable.MaxSpeed;
+                movable.MovementVelocity = _currentDirection.Normalized() * movable.MaxSprintSpeed;
             }
         }
 
         /// <inheritdoc/>
-        // Extended once to handle SprintIntent — intents are the extensibility surface.
         public void HandleIntent(IStateContext context, IInputIntent intent)
         {
             IStateMachineAccess? machineAccess = context.As<IStateMachineAccess>();
@@ -68,9 +67,10 @@ namespace Vikare.Entities.States
             }
             else if (intent is SprintIntent sprintIntent)
             {
-                if (sprintIntent.IsSprinting && machineAccess != null)
+                if (!sprintIntent.IsSprinting && machineAccess != null)
                 {
-                    machineAccess.Machine.ChangeState<SprintingState>();
+                    // WalkingState picks up direction from the next MoveIntent rather than inheriting it here.
+                    machineAccess.Machine.ChangeState<WalkingState>();
                 }
             }
         }
