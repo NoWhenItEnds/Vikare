@@ -1,5 +1,5 @@
 using Godot;
-using Vikare.Entities.Capabilities;
+using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities
 {
@@ -27,6 +27,16 @@ namespace Vikare.Entities
         /// Maximum travel speed whilst sprinting, in pixels per second; should exceed <see cref="MaxSpeed"/>.
         /// </summary>
         [Export] public float MaxSprintSpeed { get; set; } = 400f;
+
+        /// <summary>
+        /// Travel speed in pixels per second during a dodge burst; should exceed <see cref="MaxSprintSpeed"/> to feel responsive.
+        /// </summary>
+        [Export] public float MaxDodgeSpeed { get; set; } = 600f;
+
+        /// <summary>
+        /// Duration of a single dodge burst in seconds; the dodge state transitions to idle once this threshold is exceeded.
+        /// </summary>
+        [Export] public float MaxDodgeDurationSeconds { get; set; } = 0.25f;
 
         /// <inheritdoc/>
         /// <remarks>

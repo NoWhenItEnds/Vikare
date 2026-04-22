@@ -1,4 +1,4 @@
-namespace Vikare.Entities.Capabilities
+namespace Vikare.Entities.Interfaces
 {
     /// <summary>
     /// Capability contract for any entity whose visual representation is driven by named animation clips.

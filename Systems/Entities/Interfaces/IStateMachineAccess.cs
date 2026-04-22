@@ -1,4 +1,6 @@
-namespace Vikare.Entities.States
+using Vikare.Entities.States;
+
+namespace Vikare.Entities.Interfaces
 {
     /// <summary>
     /// Capability contract that exposes a reference to the entity's own <see cref="StateMachine"/> so states can request transitions without walking the scene tree.

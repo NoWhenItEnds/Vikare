@@ -1,4 +1,4 @@
-namespace Vikare.Entities.States
+namespace Vikare.Entities.Interfaces
 {
     /// <summary>
     /// Window into the entity passed to every state method; exposes capabilities via <c>As&lt;T&gt;()</c> rather than the full concrete type.

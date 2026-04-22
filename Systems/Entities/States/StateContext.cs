@@ -1,4 +1,5 @@
 using Godot;
+using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {

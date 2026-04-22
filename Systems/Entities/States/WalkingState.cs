@@ -1,6 +1,6 @@
 using Godot;
-using Vikare.Entities.Capabilities;
 using Vikare.Entities.Controllers;
+using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
@@ -48,30 +48,14 @@ namespace Vikare.Entities.States
         }
 
         /// <inheritdoc/>
-        // Extended once to handle SprintIntent — intents are the extensibility surface.
+        /// <remarks>
+        /// Updates <see cref="_currentDirection"/> from <see cref="MoveIntent"/>; all transition logic lives in the machine's transition table.
+        /// </remarks>
         public void HandleIntent(IStateContext context, IInputIntent intent)
         {
-            IStateMachineAccess? machineAccess = context.As<IStateMachineAccess>();
-
             if (intent is MoveIntent moveIntent)
             {
-                bool wantsToStop = moveIntent.Direction == Vector2.Zero;
-
-                if (wantsToStop && machineAccess != null)
-                {
-                    machineAccess.Machine.ChangeState<IdlingState>();
-                }
-                else
-                {
-                    _currentDirection = moveIntent.Direction;
-                }
-            }
-            else if (intent is SprintIntent sprintIntent)
-            {
-                if (sprintIntent.IsSprinting && machineAccess != null)
-                {
-                    machineAccess.Machine.ChangeState<SprintingState>();
-                }
+                _currentDirection = moveIntent.Direction;
             }
         }
     }

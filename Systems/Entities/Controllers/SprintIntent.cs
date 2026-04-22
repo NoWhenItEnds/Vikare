@@ -1,3 +1,5 @@
+using Vikare.Entities.Interfaces;
+
 namespace Vikare.Entities.Controllers
 {
     /// <summary>

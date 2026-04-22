@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Vikare.Entities.Capabilities
+namespace Vikare.Entities.Interfaces
 {
     /// <summary>
     /// Capability contract for any entity that can be moved by applying a velocity vector each physics tick.
@@ -21,6 +21,16 @@ namespace Vikare.Entities.Capabilities
         /// Maximum travel speed in pixels per second when sprinting; must exceed <see cref="MaxSpeed"/>.
         /// </summary>
         float MaxSprintSpeed { get; }
+
+        /// <summary>
+        /// Travel speed in pixels per second during a dodge burst; should exceed <see cref="MaxSprintSpeed"/> to feel responsive.
+        /// </summary>
+        float MaxDodgeSpeed { get; }
+
+        /// <summary>
+        /// Duration of a single dodge burst in seconds; the dodge state transitions to idle once this threshold is exceeded.
+        /// </summary>
+        float MaxDodgeDurationSeconds { get; }
 
         /// <summary>
         /// Sets <see cref="MovementVelocity"/> to <see cref="Vector2.Zero"/>, exposing the stop as a method so callers can use the null-conditional operator.

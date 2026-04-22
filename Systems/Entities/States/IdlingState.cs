@@ -1,10 +1,10 @@
-using Vikare.Entities.Capabilities;
 using Vikare.Entities.Controllers;
+using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
     /// <summary>
-    /// Resting state — zeros velocity, plays the idle animation, and waits for a <see cref="MoveIntent"/> to transition to <see cref="WalkingState"/>.
+    /// Resting state — zeros velocity and plays the idle animation. Transitions are driven by the machine's transition table.
     /// </summary>
     public sealed class IdlingState : IState
     {
@@ -36,18 +36,11 @@ namespace Vikare.Entities.States
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Idle holds no per-intent data; all transition logic lives in the machine's transition table.
+        /// </remarks>
         public void HandleIntent(IStateContext context, IInputIntent intent)
         {
-            if (intent is MoveIntent moveIntent)
-            {
-                bool wantsToMove = moveIntent.Direction != Godot.Vector2.Zero;
-                IStateMachineAccess? machineAccess = context.As<IStateMachineAccess>();
-
-                if (wantsToMove && machineAccess != null)
-                {
-                    machineAccess.Machine.ChangeState<WalkingState>();
-                }
-            }
         }
     }
 }

@@ -1,6 +1,4 @@
-using Vikare.Entities.Controllers;
-
-namespace Vikare.Entities.States
+namespace Vikare.Entities.Interfaces
 {
     /// <summary>
     /// Contract for a single state in the entity finite state machine. Each concrete state represents one behavioural mode.
