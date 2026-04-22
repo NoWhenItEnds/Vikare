@@ -4,9 +4,14 @@ using Vikare.Entities.Interfaces;
 namespace Vikare.Entities
 {
     /// <summary>
-    /// Base class for all interactive entities; inherits from <see cref="CharacterBody2D"/> and implements <see cref="IMovable"/> and <see cref="IGrounded"/>.
+    /// Base class for all interactive entities; inherits from <see cref="CharacterBody2D"/> and implements
+    /// <see cref="IMovable"/>, <see cref="IGrounded"/>, and <see cref="ITeleportable"/>.
+    /// <see cref="ITeleportable"/> is implemented here rather than on <see cref="Actor"/> because positional control
+    /// is meaningful for any <c>CharacterBody2D</c> node — props, hazards, and scripted triggers may all need
+    /// to be repositioned without being full actors. <c>CharacterBody2D</c> already exposes <c>GlobalPosition</c>,
+    /// so the implementation is a zero-cost delegation with no additional fields.
     /// </summary>
-    public partial class Entity : CharacterBody2D, IMovable, IGrounded
+    public partial class Entity : CharacterBody2D, IMovable, IGrounded, ITeleportable
     {
         /// <summary>
         /// The entity's primary collision shape; must be assigned in the editor.
