@@ -39,6 +39,27 @@ namespace Vikare.Entities
         [ExportGroup("Combat")]
         [Export] public AttackSequence? AttackSequence { get; set; }
 
+        /// <summary>
+        /// Power bound to slot 1; null means the slot is empty and <c>cast_power_1</c> input is ignored.
+        /// </summary>
+        [ExportGroup("Powers")]
+        [Export] public PowerDefinition? Power1 { get; set; } = null;
+
+        /// <summary>
+        /// Power bound to slot 2; null means the slot is empty and <c>cast_power_2</c> input is ignored.
+        /// </summary>
+        [Export] public PowerDefinition? Power2 { get; set; } = null;
+
+        /// <summary>
+        /// Power bound to slot 3; null means the slot is empty and <c>cast_power_3</c> input is ignored.
+        /// </summary>
+        [Export] public PowerDefinition? Power3 { get; set; } = null;
+
+        /// <summary>
+        /// Power bound to slot 4; null means the slot is empty and <c>cast_power_4</c> input is ignored.
+        /// </summary>
+        [Export] public PowerDefinition? Power4 { get; set; } = null;
+
         /// <inheritdoc/>
         /// <remarks>
         /// Base implementation is a no-op virtual hook. Override in a concrete actor subclass or connect a hitbox
