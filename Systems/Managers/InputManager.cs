@@ -2,7 +2,8 @@ using System;
 using Godot;
 using Vikare.Entities;
 using Vikare.Entities.Combat;
-using Vikare.Entities.Controllers;
+using Vikare.Entities.Intents;
+using Vikare.Entities.Interfaces;
 using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
@@ -51,13 +52,13 @@ namespace Vikare.Managers
                 DispatchMovement();
                 DispatchSprint();
                 DispatchBlock();
-                DispatchDodge();
-                DispatchLightAttack();
-                DispatchHeavyAttack();
-                DispatchCastPower(ActionCastPower1, _player!.Power1);
-                DispatchCastPower(ActionCastPower2, _player!.Power2);
-                DispatchCastPower(ActionCastPower3, _player!.Power3);
-                DispatchCastPower(ActionCastPower4, _player!.Power4);
+                DispatchIntent<DodgeIntent>("action_dodge");
+                DispatchIntent<LightAttackIntent>("action_attack_light");
+                DispatchIntent<HeavyAttackIntent>("action_attack_heavy");
+                DispatchCastPower("action_power_00", _player!.Power1);
+                DispatchCastPower("action_power_01", _player!.Power2);
+                DispatchCastPower("action_power_02", _player!.Power3);
+                DispatchCastPower("action_power_03", _player!.Power4);
             }
         }
 
@@ -84,65 +85,31 @@ namespace Vikare.Managers
 
             if (pressed)
             {
-                _player!.Machine.HandleIntent(new SprintIntent(isSprinting: true));
+                _player!.Machine.HandleIntent(new SprintIntent(true));
             }
             else if (released)
             {
-                _player!.Machine.HandleIntent(new SprintIntent(isSprinting: false));
+                _player!.Machine.HandleIntent(new SprintIntent(false));
             }
         }
 
-        /// <summary>
-        /// Dispatches a <see cref="BlockIntent"/> on the press edge (<c>IsBlocking = true</c>)
-        /// and on the release edge (<c>IsBlocking = false</c>). No intent is sent on held frames.
-        /// </summary>
+        /// <summary> Dispatches a <see cref="BlockIntent"/>s. </summary>
         private void DispatchBlock()
         {
-            bool pressed = Input.IsActionJustPressed(ActionBlock);
-            bool released = Input.IsActionJustReleased(ActionBlock);
+            String blockAction = "action_block";
+            Boolean pressed = Input.IsActionJustPressed(blockAction);
+            Boolean released = Input.IsActionJustReleased(blockAction);
 
             if (pressed)
             {
-                _player!.Machine.HandleIntent(new BlockIntent(isBlocking: true));
+                _player!.Machine.HandleIntent(new BlockIntent(true));
             }
             else if (released)
             {
-                _player!.Machine.HandleIntent(new BlockIntent(isBlocking: false));
+                _player!.Machine.HandleIntent(new BlockIntent(false));
             }
         }
 
-        /// <summary>
-        /// Dispatches a <see cref="DodgeIntent"/> on the press edge only. No release semantics — dodge is a one-shot trigger.
-        /// </summary>
-        private void DispatchDodge()
-        {
-            if (Input.IsActionJustPressed(ActionDodge))
-            {
-                _player!.Machine.HandleIntent(new DodgeIntent());
-            }
-        }
-
-        /// <summary>
-        /// Dispatches a <see cref="LightAttackIntent"/> on the press edge only.
-        /// </summary>
-        private void DispatchLightAttack()
-        {
-            if (Input.IsActionJustPressed(ActionAttackLight))
-            {
-                _player!.Machine.HandleIntent(new LightAttackIntent());
-            }
-        }
-
-        /// <summary>
-        /// Dispatches a <see cref="HeavyAttackIntent"/> on the press edge only.
-        /// </summary>
-        private void DispatchHeavyAttack()
-        {
-            if (Input.IsActionJustPressed(ActionAttackHeavy))
-            {
-                _player!.Machine.HandleIntent(new HeavyAttackIntent());
-            }
-        }
 
         /// <summary>
         /// Dispatches a <see cref="CastPowerIntent"/> for <paramref name="actionName"/> on the press edge,
@@ -151,11 +118,23 @@ namespace Vikare.Managers
         /// </summary>
         /// <param name="actionName">The InputMap action to test (one of the <c>cast_power_N</c> constants).</param>
         /// <param name="power">The power bound to this slot; null means the slot is empty.</param>
-        private void DispatchCastPower(string actionName, PowerDefinition? power)
+        private void DispatchCastPower(String actionName, PowerDefinition? power)
         {
             if (Input.IsActionJustPressed(actionName) && power != null)
             {
                 _player!.Machine.HandleIntent(new CastPowerIntent(power));
+            }
+        }
+
+
+        /// <summary> A generic intent dispatch. Binds an action to the intent directly. </summary>
+        /// <typeparam name="T"> The type of intent to create upon the action. </typeparam>
+        /// <param name="actionName"> The action's name. </param>
+        private void DispatchIntent<T>(String actionName) where T : IInputIntent, new ()
+        {
+            if (Input.IsActionJustPressed(actionName))
+            {
+                _player!.Machine.HandleIntent(new T());
             }
         }
     }

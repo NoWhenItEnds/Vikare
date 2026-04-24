@@ -31,8 +31,8 @@ namespace Vikare.Entities.Combat
         [Export] public double HitFrameSeconds { get; set; } = 0.2;
 
         /// <summary>
-        /// Earliest time in seconds at which a chain intent (<see cref="Vikare.Entities.Controllers.LightAttackIntent"/>
-        /// or <see cref="Vikare.Entities.Controllers.HeavyAttackIntent"/>) is accepted.
+        /// Earliest time in seconds at which a chain intent (<see cref="Vikare.Entities.Intents.LightAttackIntent"/>
+        /// or <see cref="Vikare.Entities.Intents.HeavyAttackIntent"/>) is accepted.
         /// Input arriving before this offset is ignored to prevent accidental buffering.
         /// </summary>
         [Export] public double CancelWindowStartSeconds { get; set; } = 0.3;
@@ -45,14 +45,14 @@ namespace Vikare.Entities.Combat
 
         /// <summary>
         /// Index into <see cref="AttackSequence.Steps"/> identifying the step to transition to when a
-        /// <see cref="Vikare.Entities.Controllers.LightAttackIntent"/> arrives in the cancel window.
+        /// <see cref="Vikare.Entities.Intents.LightAttackIntent"/> arrives in the cancel window.
         /// Set to <c>-1</c> to indicate no light-attack chain is available from this step.
         /// </summary>
         [Export] public int NextOnLight { get; set; } = -1;
 
         /// <summary>
         /// Index into <see cref="AttackSequence.Steps"/> identifying the step to transition to when a
-        /// <see cref="Vikare.Entities.Controllers.HeavyAttackIntent"/> arrives in the cancel window.
+        /// <see cref="Vikare.Entities.Intents.HeavyAttackIntent"/> arrives in the cancel window.
         /// Set to <c>-1</c> to indicate no heavy-attack chain is available from this step.
         /// </summary>
         [Export] public int NextOnHeavy { get; set; } = -1;

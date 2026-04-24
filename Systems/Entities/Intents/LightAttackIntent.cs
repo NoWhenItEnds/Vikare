@@ -1,6 +1,6 @@
 using Vikare.Entities.Interfaces;
 
-namespace Vikare.Entities.Controllers
+namespace Vikare.Entities.Intents
 {
     /// <summary>
     /// An <see cref="IInputIntent"/> expressing a one-shot request to perform a light attack.

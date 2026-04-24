@@ -1,5 +1,5 @@
 using Godot;
-using Vikare.Entities.Controllers;
+using Vikare.Entities.Intents;
 using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States

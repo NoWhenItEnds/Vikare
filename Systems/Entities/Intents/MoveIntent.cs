@@ -1,7 +1,7 @@
 using Godot;
 using Vikare.Entities.Interfaces;
 
-namespace Vikare.Entities.Controllers
+namespace Vikare.Entities.Intents
 {
     /// <summary>
     /// An <see cref="IInputIntent"/> expressing the desired movement direction; a zero vector means "stop moving".

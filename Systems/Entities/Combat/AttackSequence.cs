@@ -19,14 +19,14 @@ namespace Vikare.Entities.Combat
 
         /// <summary>
         /// Index into <see cref="Steps"/> that the combo begins at when a
-        /// <see cref="Vikare.Entities.Controllers.LightAttackIntent"/> initiates the sequence.
+        /// <see cref="Vikare.Entities.Intents.LightAttackIntent"/> initiates the sequence.
         /// Set to <c>-1</c> if this moveset has no light-attack entry point.
         /// </summary>
         [Export] public int RootOnLight { get; set; } = 0;
 
         /// <summary>
         /// Index into <see cref="Steps"/> that the combo begins at when a
-        /// <see cref="Vikare.Entities.Controllers.HeavyAttackIntent"/> initiates the sequence.
+        /// <see cref="Vikare.Entities.Intents.HeavyAttackIntent"/> initiates the sequence.
         /// Set to <c>-1</c> if this moveset has no heavy-attack entry point.
         /// </summary>
         [Export] public int RootOnHeavy { get; set; } = -1;

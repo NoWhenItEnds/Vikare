@@ -29,18 +29,18 @@ namespace Vikare.Entities.Combat
         [Export] public double EffectFrameSeconds { get; set; } = 0.3;
 
         /// <summary>
-        /// Earliest time in seconds at which a chain <see cref="Vikare.Entities.Controllers.CastPowerIntent"/> is accepted.
+        /// Earliest time in seconds at which a chain <see cref="Vikare.Entities.Intents.CastPowerIntent"/> is accepted.
         /// </summary>
         [Export] public double CancelWindowStartSeconds { get; set; } = 0.4;
 
         /// <summary>
-        /// Latest time in seconds at which a chain <see cref="Vikare.Entities.Controllers.CastPowerIntent"/> is accepted.
+        /// Latest time in seconds at which a chain <see cref="Vikare.Entities.Intents.CastPowerIntent"/> is accepted.
         /// Input after this offset is ignored; the cast runs to <see cref="DurationSeconds"/> and returns to idle.
         /// </summary>
         [Export] public double CancelWindowEndSeconds { get; set; } = 0.55;
 
         /// <summary>
-        /// Powers that can be chained to from this cast if a <see cref="Vikare.Entities.Controllers.CastPowerIntent"/>
+        /// Powers that can be chained to from this cast if a <see cref="Vikare.Entities.Intents.CastPowerIntent"/>
         /// arrives in the cancel window and the intent's <c>Power</c> is present in this array.
         /// An empty array means this power is non-comboable (the degenerate case used by single-use powers like teleport).
         /// </summary>

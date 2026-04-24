@@ -1,7 +1,7 @@
 using System;
 using Vikare.Entities.Interfaces;
 
-namespace Vikare.Entities.Controllers
+namespace Vikare.Entities.Intents
 {
     /// <summary> An input expressing whether the controller wants the entity to sprint. </summary>
     public sealed class SprintIntent : IInputIntent

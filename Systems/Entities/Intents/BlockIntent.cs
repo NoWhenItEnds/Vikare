@@ -1,6 +1,6 @@
 using Vikare.Entities.Interfaces;
 
-namespace Vikare.Entities.Controllers
+namespace Vikare.Entities.Intents
 {
     /// <summary>
     /// An <see cref="IInputIntent"/> expressing whether the controller wants the entity to hold a blocking stance; edge-triggered on key press and release.

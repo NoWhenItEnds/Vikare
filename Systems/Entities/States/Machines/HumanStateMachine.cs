@@ -1,4 +1,4 @@
-using Vikare.Entities.Controllers;
+using Vikare.Entities.Intents;
 
 namespace Vikare.Entities.States.Machines
 {
