@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using Vikare.Entities;
 using Vikare.Entities.Combat;
@@ -6,146 +7,46 @@ using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
 {
-    /// <summary>
-    /// Translates raw Godot input events into <c>IInputIntent</c> instances and dispatches them
-    /// to the registered player's state machine each frame.
-    /// <para>
-    /// This node is placed in the scene tree at <c>Managers/Input</c> inside <c>Game.tscn</c>;
-    /// it is not an autoload. Placement in the scene ensures deterministic teardown order.
-    /// </para>
-    /// <para>
-    /// Only one player may be registered at a time. A second <see cref="SetPlayer"/> call overwrites
-    /// the first and logs a warning. AI-controlled actors drive their own state machines directly
-    /// and are never registered here.
-    /// </para>
-    /// </summary>
+    /// <summary> Manages the input during game runtime. Translates raw Godot input events into <c>IInputIntent</c> instances and dispatches them to the registered player's state machine each frame. </summary>
     public partial class InputManager : SingletonNode<InputManager>
     {
-        /// <summary>
-        /// Name of the input action that moves the player upward (keyboard: W; gamepad: left stick up).
-        /// </summary>
-        private const string ActionMoveUp = "move_up";
+        /// <summary> Analogue deadzone. Filters out stick drift below this magnitude. </summary>
+        [ExportGroup("Settings")]
+        [Export] private Single _analogueDeadzone = 0.2f;
 
-        /// <summary>
-        /// Name of the input action that moves the player downward (keyboard: S; gamepad: left stick down).
-        /// </summary>
-        private const string ActionMoveDown = "move_down";
 
-        /// <summary>
-        /// Name of the input action that moves the player leftward (keyboard: A; gamepad: left stick left).
-        /// </summary>
-        private const string ActionMoveLeft = "move_left";
-
-        /// <summary>
-        /// Name of the input action that moves the player rightward (keyboard: D; gamepad: left stick right).
-        /// </summary>
-        private const string ActionMoveRight = "move_right";
-
-        /// <summary>
-        /// Name of the input action that begins or ends sprinting (keyboard: Shift; gamepad: L3).
-        /// </summary>
-        private const string ActionSprint = "sprint";
-
-        /// <summary>
-        /// Name of the input action that triggers a dodge (keyboard: Space; gamepad: East face button).
-        /// </summary>
-        private const string ActionDodge = "dodge";
-
-        /// <summary>
-        /// Name of the input action that triggers a light attack (keyboard: left mouse button; gamepad: West face button).
-        /// </summary>
-        private const string ActionAttackLight = "attack_light";
-
-        /// <summary>
-        /// Name of the input action that triggers a heavy attack (keyboard: right mouse button; gamepad: North face button).
-        /// </summary>
-        private const string ActionAttackHeavy = "attack_heavy";
-
-        /// <summary>
-        /// Name of the input action that begins or ends blocking (keyboard: E; gamepad: right shoulder button).
-        /// </summary>
-        private const string ActionBlock = "block";
-
-        /// <summary>
-        /// Name of the input action that casts the power bound to slot 1 (keyboard: 1; gamepad: D-pad up).
-        /// </summary>
-        private const string ActionCastPower1 = "cast_power_1";
-
-        /// <summary>
-        /// Name of the input action that casts the power bound to slot 2 (keyboard: 2; gamepad: D-pad right).
-        /// </summary>
-        private const string ActionCastPower2 = "cast_power_2";
-
-        /// <summary>
-        /// Name of the input action that casts the power bound to slot 3 (keyboard: 3; gamepad: D-pad down).
-        /// </summary>
-        private const string ActionCastPower3 = "cast_power_3";
-
-        /// <summary>
-        /// Name of the input action that casts the power bound to slot 4 (keyboard: 4; gamepad: D-pad left).
-        /// </summary>
-        private const string ActionCastPower4 = "cast_power_4";
-
-        /// <summary>
-        /// Analogue deadzone applied to <see cref="Input.GetVector"/> for movement; filters out stick drift below this magnitude.
-        /// </summary>
-        private const float MovementDeadzone = 0.2f;
-
-        /// <summary>
-        /// The player actor currently receiving input; null when no player has registered.
-        /// Assigned by <see cref="SetPlayer"/> and cleared by <see cref="ClearPlayer"/>.
-        /// </summary>
+        /// <summary> The player actor currently receiving input; null when no player has registered. </summary>
         private Actor? _player;
 
-        /// <summary>
-        /// Registers <paramref name="player"/> as the recipient of all translated input intents.
-        /// If a player is already registered, a warning is pushed to the Godot output and the new actor
-        /// overwrites the old one. A future multiplayer refactor will need to extend this to a collection.
-        /// </summary>
-        /// <param name="player">The actor that should receive player input.</param>
-        public void SetPlayer(Actor player)
+
+        /// <summary> Registers an actor as the recipient of all translated input intents. </summary>
+        /// <param name="player"> The actor that should receive player input. </param>
+        public void RegisterPlayer(Actor player)
         {
             if (_player != null)
             {
+                // TODO - Make a proper logging system.
                 GD.PushWarning(
                     $"[InputManager] SetPlayer called whilst '{_player.Name}' is already registered. " +
-                    $"Overwriting with '{player.Name}'. If this is unintentional, ensure ClearPlayer is called on _ExitTree.");
+                    $"Overwriting with '{player.Name}'.");
+                DeregisterPlayer();
             }
 
             _player = player;
         }
 
-        /// <summary>
-        /// Unregisters the current player, stopping all input dispatch. Safe to call when no player is registered.
-        /// </summary>
-        public void ClearPlayer()
+
+        /// <summary> Unregisters the current player, stopping all input dispatch. Safe to call when no player is registered. </summary>
+        public void DeregisterPlayer()
         {
             _player = null;
         }
 
-        /// <summary>
-        /// Polls Godot's <see cref="Input"/> singleton each frame and dispatches zero or more
-        /// <c>IInputIntent</c> instances to the registered player's state machine.
-        /// <para>
-        /// Dispatch order per frame:
-        /// <list type="number">
-        ///   <item><see cref="MoveIntent"/> — always dispatched, even when the vector is zero, so walking/sprinting
-        ///   states observe the release and transition to idle.</item>
-        ///   <item><see cref="SprintIntent"/> — dispatched on edge (press or release) only.</item>
-        ///   <item><see cref="BlockIntent"/> — dispatched on edge (press or release) only.</item>
-        ///   <item><see cref="DodgeIntent"/> — dispatched on press only.</item>
-        ///   <item><see cref="LightAttackIntent"/> — dispatched on press only.</item>
-        ///   <item><see cref="HeavyAttackIntent"/> — dispatched on press only.</item>
-        ///   <item><see cref="CastPowerIntent"/> ×4 — dispatched on press only; silently dropped if the corresponding power slot is null.</item>
-        /// </list>
-        /// </para>
-        /// </summary>
-        /// <param name="delta">Elapsed time since the last process tick, in seconds. Not used directly; Godot requires the signature.</param>
-        public override void _Process(double delta)
-        {
-            bool playerActive = _player != null;
 
-            if (playerActive)
+        /// <inheritdoc/>
+        public override void _Process(Double delta)
+        {
+            if (_player != null)
             {
                 DispatchMovement();
                 DispatchSprint();
@@ -160,31 +61,26 @@ namespace Vikare.Managers
             }
         }
 
-        /// <summary>
-        /// Reads the analogue movement vector and dispatches a <see cref="MoveIntent"/> every frame.
-        /// A zero vector is dispatched intentionally so that walking and sprinting states observe the
-        /// stick-release and transition back to idle.
-        /// </summary>
+        /// <summary> Reads the analogue movement vector and dispatches a <see cref="MoveIntent"/> every frame. </summary>
         private void DispatchMovement()
         {
+            //A zero vector is dispatched intentionally so that walking and sprinting states observe the stick-release and transition back to idle.
             Vector2 direction = Input.GetVector(
-                ActionMoveLeft,
-                ActionMoveRight,
-                ActionMoveUp,
-                ActionMoveDown,
-                MovementDeadzone);
+                "action_move_left",
+                "action_move_right",
+                "action_move_up",
+                "action_move_down",
+                _analogueDeadzone);
 
             _player!.Machine.HandleIntent(new MoveIntent(direction));
         }
 
-        /// <summary>
-        /// Dispatches a <see cref="SprintIntent"/> on the press edge (<c>IsSprinting = true</c>)
-        /// and on the release edge (<c>IsSprinting = false</c>). No intent is sent on held frames.
-        /// </summary>
+        /// <summary> Dispatches a <see cref="SprintIntent"/>s. </summary>
         private void DispatchSprint()
         {
-            bool pressed = Input.IsActionJustPressed(ActionSprint);
-            bool released = Input.IsActionJustReleased(ActionSprint);
+            String sprintAction = "action_sprint";
+            Boolean pressed = Input.IsActionJustPressed(sprintAction);
+            Boolean released = Input.IsActionJustReleased(sprintAction);
 
             if (pressed)
             {
