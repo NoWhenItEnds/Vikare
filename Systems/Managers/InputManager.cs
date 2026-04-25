@@ -2,8 +2,6 @@ using System;
 using Godot;
 using Vikare.Entities;
 using Vikare.Entities.Combat;
-using Vikare.Entities.Intents;
-using Vikare.Entities.Interfaces;
 using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
@@ -15,6 +13,8 @@ namespace Vikare.Managers
         [ExportGroup("Settings")]
         [Export] private Single _analogueDeadzone = 0.2f;
 
+        /// <summary> The intent submitted the previous frame. A null indicates that there wasn't one. </summary>
+        private ActionIntent? _previousInput;
 
         /// <summary> The player actor currently receiving input; null when no player has registered. </summary>
         private Actor? _player;
@@ -47,94 +47,65 @@ namespace Vikare.Managers
         /// <inheritdoc/>
         public override void _Process(Double delta)
         {
-            if (_player != null)
-            {
-                DispatchMovement();
-                DispatchSprint();
-                DispatchBlock();
-                DispatchIntent<DodgeIntent>("action_dodge");
-                DispatchIntent<LightAttackIntent>("action_attack_light");
-                DispatchIntent<HeavyAttackIntent>("action_attack_heavy");
-                DispatchCastPower("action_power_00", _player!.Power1);
-                DispatchCastPower("action_power_01", _player!.Power2);
-                DispatchCastPower("action_power_02", _player!.Power3);
-                DispatchCastPower("action_power_03", _player!.Power4);
-            }
-        }
-
-        /// <summary> Reads the analogue movement vector and dispatches a <see cref="MoveIntent"/> every frame. </summary>
-        private void DispatchMovement()
-        {
-            //A zero vector is dispatched intentionally so that walking and sprinting states observe the stick-release and transition back to idle.
+            // Get the current direction this frame.
             Vector2 direction = Input.GetVector(
-                "action_move_left",
-                "action_move_right",
-                "action_move_up",
-                "action_move_down",
+                "action_left",
+                "action_right",
+                "action_up",
+                "action_down",
                 _analogueDeadzone);
 
-            _player!.Machine.HandleIntent(new MoveIntent(direction));
+            // If there is a player, we'll go through categories of actions. Each category overwrites the previous.
+            if (_player != null)
+            {
+                ActionIntent? intent = null;
+
+                if(Input.IsActionPressed("action_sprint"))
+                {
+                    intent = new SprintIntent(direction);
+                }
+
+                if (Input.IsActionJustPressed("action_attack_light"))
+                {
+                    intent = new AttackIntent(direction, AttackIntent.AttackKind.Light);
+                }
+                else if (Input.IsActionJustPressed("action_attack_heavy"))
+                {
+                    intent = new AttackIntent(direction, AttackIntent.AttackKind.Heavy);
+                }
+
+                // Dodge / block should always interrupt.
+                if (Input.IsActionJustPressed("action_dodge"))
+                {
+                    intent = new DodgeIntent(direction);
+                }
+                else if (Input.IsActionJustPressed("action_block"))
+                {
+                    intent = new BlockIntent(direction);
+                }
+
+                // If there has been no other inputs, default to walking.
+                if (intent == null)
+                {
+                    intent = new WalkIntent(direction);
+                }
+
+                _player!.Machine.HandleIntent(intent);
+                _previousInput = intent;
+
+                //DispatchCastPower("action_power_00", _player!.Power1);
+                //DispatchCastPower("action_power_01", _player!.Power2);
+                //DispatchCastPower("action_power_02", _player!.Power3);
+                //DispatchCastPower("action_power_03", _player!.Power4);
+            }
         }
 
-        /// <summary> Dispatches a <see cref="SprintIntent"/>s. </summary>
-        private void DispatchSprint()
-        {
-            String sprintAction = "action_sprint";
-            Boolean pressed = Input.IsActionJustPressed(sprintAction);
-            Boolean released = Input.IsActionJustReleased(sprintAction);
 
-            if (pressed)
-            {
-                _player!.Machine.HandleIntent(new SprintIntent(true));
-            }
-            else if (released)
-            {
-                _player!.Machine.HandleIntent(new SprintIntent(false));
-            }
-        }
-
-        /// <summary> Dispatches a <see cref="BlockIntent"/>s. </summary>
-        private void DispatchBlock()
-        {
-            String blockAction = "action_block";
-            Boolean pressed = Input.IsActionJustPressed(blockAction);
-            Boolean released = Input.IsActionJustReleased(blockAction);
-
-            if (pressed)
-            {
-                _player!.Machine.HandleIntent(new BlockIntent(true));
-            }
-            else if (released)
-            {
-                _player!.Machine.HandleIntent(new BlockIntent(false));
-            }
-        }
-
-
-        /// <summary>
-        /// Dispatches a <see cref="CastPowerIntent"/> for <paramref name="actionName"/> on the press edge,
-        /// but only when <paramref name="power"/> is non-null. A null power slot silently drops the input,
-        /// consistent with the intent of an unbound hotbar slot.
-        /// </summary>
-        /// <param name="actionName">The InputMap action to test (one of the <c>cast_power_N</c> constants).</param>
-        /// <param name="power">The power bound to this slot; null means the slot is empty.</param>
-        private void DispatchCastPower(String actionName, PowerDefinition? power)
+        private void DispatchCastPower(String actionName, Vector2 direction, PowerDefinition? power)
         {
             if (Input.IsActionJustPressed(actionName) && power != null)
             {
-                _player!.Machine.HandleIntent(new CastPowerIntent(power));
-            }
-        }
-
-
-        /// <summary> A generic intent dispatch. Binds an action to the intent directly. </summary>
-        /// <typeparam name="T"> The type of intent to create upon the action. </typeparam>
-        /// <param name="actionName"> The action's name. </param>
-        private void DispatchIntent<T>(String actionName) where T : IInputIntent, new ()
-        {
-            if (Input.IsActionJustPressed(actionName))
-            {
-                _player!.Machine.HandleIntent(new T());
+                _player!.Machine.HandleIntent(new PowerIntent(direction, power));
             }
         }
     }

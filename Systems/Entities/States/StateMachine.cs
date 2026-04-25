@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
@@ -26,7 +25,7 @@ namespace Vikare.Entities.States
             /// <summary>
             /// Returns true when the supplied intent satisfies the condition for this transition.
             /// </summary>
-            public Func<IInputIntent, bool> Predicate { get; }
+            public Func<ActionIntent, bool> Predicate { get; }
 
             /// <summary>
             /// Concrete type of the state to enter when the predicate matches.
@@ -39,7 +38,7 @@ namespace Vikare.Entities.States
             /// <param name="sourceType">Source state type.</param>
             /// <param name="predicate">Intent predicate; must return true for the transition to fire.</param>
             /// <param name="targetType">Target state type.</param>
-            public TransitionEntry(Type sourceType, Func<IInputIntent, bool> predicate, Type targetType)
+            public TransitionEntry(Type sourceType, Func<ActionIntent, Boolean> predicate, Type targetType)
             {
                 SourceType = sourceType;
                 Predicate = predicate;
@@ -126,7 +125,7 @@ namespace Vikare.Entities.States
         /// Silently dropped if the machine has not yet initialised.
         /// </summary>
         /// <param name="intent">The controller's intent. Must not be null.</param>
-        public void HandleIntent(IInputIntent intent)
+        public void HandleIntent(ActionIntent intent)
         {
             bool isReady = _currentState != null && _context != null;
             if (isReady)
