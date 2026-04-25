@@ -1,5 +1,4 @@
 using Godot;
-using Vikare.Entities.Intents;
 using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
@@ -51,12 +50,18 @@ namespace Vikare.Entities.States
         /// <remarks>
         /// Updates <see cref="_currentDirection"/> from <see cref="MoveIntent"/>; all transition logic lives in the machine's transition table.
         /// </remarks>
-        public void HandleIntent(IStateContext context, IInputIntent intent)
+        public void HandleIntent(IStateContext context, ActionIntent intent)
         {
-            if (intent is MoveIntent moveIntent)
+            if (intent is WalkIntent moveIntent)
             {
                 _currentDirection = moveIntent.Direction;
             }
         }
+
+        public void HandleIntent(IStateContext context, ActionIntent intent)
+        {
+            throw new System.NotImplementedException();
+        }
+
     }
 }

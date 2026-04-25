@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
@@ -228,7 +229,7 @@ namespace Vikare.Entities.States
         /// </summary>
         /// <param name="intent">The intent to test against each predicate.</param>
         /// <returns>The target state type of the first matching transition, or null.</returns>
-        private Type? FindTransitionTarget(IInputIntent intent)
+        private Type? FindTransitionTarget(ActionIntent intent)
         {
             Type currentType = _currentState!.GetType();
             Type? result = null;
@@ -321,7 +322,7 @@ namespace Vikare.Entities.States
             /// <param name="predicate">Returns true when the intent satisfies the transition condition.</param>
             /// <returns>A builder ready to accept the target state via <see cref="TransitionPredicateBuilder{TIntent}.Transition{TTarget}"/>.</returns>
             public TransitionPredicateBuilder<TIntent> On<TIntent>(Func<TIntent, bool> predicate)
-                where TIntent : IInputIntent
+                where TIntent : ActionIntent
             {
                 return new TransitionPredicateBuilder<TIntent>(_sourceType, predicate, _transitions);
             }
@@ -331,7 +332,7 @@ namespace Vikare.Entities.States
         /// Second step of the fluent transition builder; holds source type and predicate, waiting for the target type.
         /// </summary>
         /// <typeparam name="TIntent">The specific intent subtype the predicate was declared for.</typeparam>
-        protected sealed class TransitionPredicateBuilder<TIntent> where TIntent : IInputIntent
+        protected sealed class TransitionPredicateBuilder<TIntent> where TIntent : ActionIntent
         {
             /// <summary>
             /// The source state type captured from the preceding <see cref="TransitionBuilder"/>.
@@ -367,7 +368,7 @@ namespace Vikare.Entities.States
             /// <typeparam name="TTarget">The state to enter when the predicate matches.</typeparam>
             public void Transition<TTarget>() where TTarget : IState
             {
-                Func<IInputIntent, bool> wrappedPredicate =
+                Func<ActionIntent, bool> wrappedPredicate =
                     raw => raw is TIntent typed && _typedPredicate(typed);
 
                 _transitions.Add(new TransitionEntry(_sourceType, wrappedPredicate, typeof(TTarget)));

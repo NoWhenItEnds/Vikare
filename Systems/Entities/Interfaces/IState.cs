@@ -36,6 +36,6 @@ namespace Vikare.Entities.Interfaces
         /// </summary>
         /// <param name="context">Entity context at the time of the input event.</param>
         /// <param name="intent">The controller's intent; use pattern matching to check for specific types.</param>
-        void HandleIntent(IStateContext context, IInputIntent intent);
+        void HandleIntent(IStateContext context, ActionIntent intent);
     }
 }

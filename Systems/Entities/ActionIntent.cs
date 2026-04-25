@@ -1,4 +1,5 @@
 using Godot;
+using Vikare.Entities.Combat;
 
 namespace Vikare.Entities
 {
