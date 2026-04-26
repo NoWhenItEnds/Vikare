@@ -1,41 +1,46 @@
+using Vikare.Entities.Intents;
+
 namespace Vikare.Entities.Interfaces
 {
     /// <summary>
-    /// Contract for a single state in the entity finite state machine. Each concrete state represents one behavioural mode.
+    /// Contract for a single state in the entity finite state machine. Concrete states represent one
+    /// distinct behavioural mode (idle, walking, blocking, ability execution, etc.).
+    /// States are plain C# classes that receive the owning <see cref="Vikare.Entities.Actor"/> directly.
     /// </summary>
     public interface IState
     {
         /// <summary>
-        /// Called once when this state becomes active. Use to play the entry animation and reset local state.
+        /// Called once when this state becomes active. Play the entry animation and reset local fields.
         /// </summary>
-        /// <param name="context">Entity context exposing capabilities available during entry.</param>
-        void Enter(IStateContext context);
+        /// <param name="actor">The actor entering this state.</param>
+        void Enter(Actor actor);
 
         /// <summary>
-        /// Called once when this state is deactivated. Use to clean up transient effects that must not persist.
+        /// Called once when this state is deactivated. Clean up any transient effects.
         /// </summary>
-        /// <param name="context">Entity context exposing capabilities available during exit.</param>
-        void Exit(IStateContext context);
+        /// <param name="actor">The actor exiting this state.</param>
+        void Exit(Actor actor);
 
         /// <summary>
-        /// Called every visual frame while active — equivalent to Godot's <c>_Process</c>.
+        /// Called every visual frame while this state is active. Use for visuals-only updates.
         /// </summary>
-        /// <param name="context">Entity context for this frame.</param>
-        /// <param name="delta">Elapsed time since the last frame, in seconds.</param>
-        void Process(IStateContext context, double delta);
+        /// <param name="actor">The owning actor.</param>
+        /// <param name="delta">Elapsed time since the last visual frame, in seconds.</param>
+        void Process(Actor actor, double delta);
 
         /// <summary>
-        /// Called every physics tick while active — equivalent to Godot's <c>_PhysicsProcess</c>. Use for velocity updates.
+        /// Called every physics tick while this state is active. Use for velocity writes and timers.
         /// </summary>
-        /// <param name="context">Entity context for this physics tick.</param>
+        /// <param name="actor">The owning actor.</param>
         /// <param name="delta">Elapsed time since the last physics tick, in seconds.</param>
-        void PhysicsProcess(IStateContext context, double delta);
+        void PhysicsProcess(Actor actor, double delta);
 
         /// <summary>
-        /// Called when the controller produces an <see cref="IInputIntent"/>. Unknown intent types must be silently ignored.
+        /// Called when the controller produces an <see cref="ActionIntent"/>. Unknown intent types must
+        /// be silently ignored.
         /// </summary>
-        /// <param name="context">Entity context at the time of the input event.</param>
+        /// <param name="actor">The owning actor.</param>
         /// <param name="intent">The controller's intent; use pattern matching to check for specific types.</param>
-        void HandleIntent(IStateContext context, ActionIntent intent);
+        void HandleIntent(Actor actor, ActionIntent intent);
     }
 }

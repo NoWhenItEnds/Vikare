@@ -5,90 +5,85 @@ using Vikare.Entities.Interfaces;
 namespace Vikare.Entities.States
 {
     /// <summary>
-    /// Brief burst of movement in the most-recently-known direction, lasting <see cref="IMovable.MaxDodgeDurationSeconds"/> seconds.
-    /// On entry the current velocity direction is snapped; if the entity is stationary the velocity is zeroed and the machine
-    /// returns to <see cref="IdlingState"/> on the next tick via <see cref="IStateMachineAccess.Machine"/>.
-    /// Self-transition is performed directly through <see cref="IStateMachineAccess"/> rather than a synthetic intent because
-    /// the elapsed timer fires from the physics loop — not from a controller event — and introducing an intent type that
-    /// no controller ever produces would pollute the intent surface without adding clarity.
-    /// Out of scope for this increment: invincibility frames, cooldown enforcement, directional input override mid-dodge.
+    /// Brief burst of movement in the direction snapped on entry, lasting
+    /// <see cref="Vikare.Entities.Entity.MaxDodgeDurationSeconds"/> seconds.
     /// </summary>
+    /// <remarks>
+    /// If the actor was stationary when the dodge was triggered (<see cref="_dodgeDirection"/> is zero),
+    /// the state immediately returns to <see cref="IdlingState"/> on the first physics tick.
+    ///
+    /// Self-transition is performed by calling <c>actor.Machine.ChangeState</c> directly rather than
+    /// via a synthetic intent, because the elapsed timer fires from the physics loop — not from a
+    /// controller event — and an intent that no controller ever produces would pollute the intent surface.
+    /// </remarks>
     public sealed class DodgingState : IState
     {
-        /// <summary>
-        /// Name of the dodge animation clip; must match a clip in the entity's animation library.
-        /// </summary>
+        /// <summary>Dodge animation clip name; must match the entity's animation library.</summary>
         private const string DodgeAnimationName = "dodge";
 
         /// <summary>
-        /// Direction the entity travels during the dodge, snapped from <see cref="IMovable.MovementVelocity"/> on entry.
-        /// Remains <see cref="Vector2.Zero"/> when the entity was stationary, causing an immediate idle transition.
+        /// Direction snapped from the actor's current velocity on entry; held constant for the burst.
+        /// Zero when the actor was stationary, causing an immediate idle transition.
         /// </summary>
         private Vector2 _dodgeDirection = Vector2.Zero;
 
         /// <summary>
-        /// Seconds elapsed since the dodge began; compared against <see cref="IMovable.MaxDodgeDurationSeconds"/> each physics tick.
-        /// Reset to zero on entry so re-entering the state never inherits a stale timer.
+        /// Seconds elapsed since the dodge began; compared against
+        /// <see cref="Vikare.Entities.Entity.MaxDodgeDurationSeconds"/> each tick.
+        /// Reset to zero on entry.
         /// </summary>
         private double _elapsed = 0.0;
 
-        /// <inheritdoc/>
-        public void Enter(IStateContext context)
+        /// <summary>
+        /// Resets the timer, snaps the dodge direction from the actor's current velocity, and plays
+        /// the dodge animation.
+        /// </summary>
+        public void Enter(Actor actor)
         {
             _elapsed = 0.0;
 
-            IMovable? movable = context.As<IMovable>();
-            Vector2 currentVelocity = movable?.MovementVelocity ?? Vector2.Zero;
-
+            Vector2 currentVelocity = actor.MovementVelocity;
             _dodgeDirection = currentVelocity != Vector2.Zero
                 ? currentVelocity.Normalized()
                 : Vector2.Zero;
 
-            context.As<IAnimated>()?.PlayAnimation(DodgeAnimationName);
+            actor.PlayAnimation(DodgeAnimationName);
         }
 
         /// <inheritdoc/>
-        public void Exit(IStateContext context)
+        public void Exit(Actor actor)
         {
         }
 
         /// <inheritdoc/>
-        public void Process(IStateContext context, double delta)
+        public void Process(Actor actor, double delta)
         {
         }
 
-        /// <inheritdoc/>
-        /// <remarks>
-        /// Writes the dodge velocity each tick. When the entity was stationary on entry (<see cref="_dodgeDirection"/> is zero)
-        /// or the elapsed time exceeds the duration, transitions immediately to <see cref="IdlingState"/> via
-        /// <see cref="IStateMachineAccess.Machine"/>. The ChangeState call is deferred to the end of the method so velocity
-        /// is fully written before the state is exited, honouring the single-exit constraint.
-        /// </remarks>
-        public void PhysicsProcess(IStateContext context, double delta)
+        /// <summary>
+        /// Writes dodge velocity each tick. Transitions to <see cref="IdlingState"/> when the actor
+        /// was stationary on entry or the elapsed time exceeds the dodge duration.
+        /// </summary>
+        public void PhysicsProcess(Actor actor, double delta)
         {
             _elapsed += delta;
 
-            IMovable? movable = context.As<IMovable>();
             bool shouldTransition = _dodgeDirection == Vector2.Zero;
 
-            if (!shouldTransition && movable is not null)
+            if (!shouldTransition)
             {
-                movable.MovementVelocity = _dodgeDirection * movable.MaxDodgeSpeed;
-                shouldTransition = _elapsed >= movable.MaxDodgeDurationSeconds;
+                actor.MovementVelocity = _dodgeDirection * actor.MaxDodgeSpeed;
+                shouldTransition = _elapsed >= actor.MaxDodgeDurationSeconds;
             }
 
             if (shouldTransition)
             {
-                context.As<IStateMachineAccess>()?.Machine.ChangeState<IdlingState>();
+                actor.Machine.ChangeState<IdlingState>();
             }
         }
 
         /// <inheritdoc/>
-        /// <remarks>
-        /// Dodge direction is snapped on entry and cannot be steered; all transition logic lives in the machine's transition table
-        /// or the duration timer above.
-        /// </remarks>
-        public void HandleIntent(IStateContext context, IInputIntent intent)
+        public void HandleIntent(Actor actor, ActionIntent intent)
         {
         }
     }

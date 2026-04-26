@@ -1,67 +1,55 @@
 using Godot;
+using Vikare.Entities.Intents;
 using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
     /// <summary>
-    /// Moves the entity at <see cref="IMovable.MaxSprintSpeed"/> in the direction of the most-recent <see cref="MoveIntent"/>.
+    /// Moves the actor at <see cref="Vikare.Entities.Entity.MaxSprintSpeed"/> in the direction supplied
+    /// by the most-recent <see cref="SprintIntent"/>. Transitions are driven by the machine's transition table.
     /// </summary>
     public sealed class SprintingState : IState
     {
-        /// <summary>
-        /// Name of the sprint animation clip; must match a clip in the entity's animation library.
-        /// </summary>
+        /// <summary>Sprint animation clip name; must match the entity's animation library.</summary>
         private const string SprintAnimationName = "sprint";
 
         /// <summary>
-        /// Most-recently received movement direction from the controller. Reset to zero on entry
-        /// so re-entering the state never inherits a stale direction from a prior activation.
+        /// Most-recently received movement direction. Reset to zero on entry to prevent direction
+        /// bleed from a prior activation; written by <see cref="HandleIntent"/>, read by
+        /// <see cref="PhysicsProcess"/>.
         /// </summary>
         private Vector2 _currentDirection = Vector2.Zero;
 
-        /// <inheritdoc/>
-        public void Enter(IStateContext context)
+        /// <summary>Resets direction to zero and plays the sprint animation.</summary>
+        public void Enter(Actor actor)
         {
             _currentDirection = Vector2.Zero;
-            context.As<IAnimated>()?.PlayAnimation(SprintAnimationName);
+            actor.PlayAnimation(SprintAnimationName);
         }
 
         /// <inheritdoc/>
-        public void Exit(IStateContext context)
+        public void Exit(Actor actor)
         {
         }
 
         /// <inheritdoc/>
-        public void Process(IStateContext context, double delta)
+        public void Process(Actor actor, double delta)
         {
         }
 
-        /// <inheritdoc/>
-        public void PhysicsProcess(IStateContext context, double delta)
+        /// <summary>Applies <see cref="_currentDirection"/> scaled by <see cref="Vikare.Entities.Entity.MaxSprintSpeed"/> each tick.</summary>
+        public void PhysicsProcess(Actor actor, double delta)
         {
-            IMovable? movable = context.As<IMovable>();
-            if (movable is not null)
+            actor.MovementVelocity = _currentDirection.Normalized() * actor.MaxSprintSpeed;
+        }
+
+        /// <summary>Updates <see cref="_currentDirection"/> from incoming <see cref="SprintIntent"/> messages.</summary>
+        public void HandleIntent(Actor actor, ActionIntent intent)
+        {
+            if (intent is SprintIntent sprintIntent)
             {
-                movable.MovementVelocity = _currentDirection.Normalized() * movable.MaxSprintSpeed;
+                _currentDirection = sprintIntent.Direction;
             }
         }
-
-        /// <inheritdoc/>
-        /// <remarks>
-        /// Updates <see cref="_currentDirection"/> from <see cref="MoveIntent"/>; all transition logic lives in the machine's transition table.
-        /// </remarks>
-        public void HandleIntent(IStateContext context, ActionIntent intent)
-        {
-            if (intent is WalkIntent moveIntent)
-            {
-                _currentDirection = moveIntent.Direction;
-            }
-        }
-
-        public void HandleIntent(IStateContext context, ActionIntent intent)
-        {
-            throw new System.NotImplementedException();
-        }
-
     }
 }

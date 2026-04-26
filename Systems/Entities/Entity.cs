@@ -1,75 +1,54 @@
 using Godot;
-using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities
 {
     /// <summary>
-    /// Base class for all interactive entities; inherits from <see cref="CharacterBody2D"/> and implements
-    /// <see cref="IMovable"/>, <see cref="IGrounded"/>, and <see cref="ITeleportable"/>.
-    /// <see cref="ITeleportable"/> is implemented here rather than on <see cref="Actor"/> because positional control
-    /// is meaningful for any <c>CharacterBody2D</c> node — props, hazards, and scripted triggers may all need
-    /// to be repositioned without being full actors. <c>CharacterBody2D</c> already exposes <c>GlobalPosition</c>,
-    /// so the implementation is a zero-cost delegation with no additional fields.
+    /// Base class for all interactive entities. Extends <see cref="CharacterBody2D"/> with movement
+    /// properties, ground detection, and a sealed physics loop that guarantees <c>MoveAndSlide</c>
+    /// always runs.
     /// </summary>
-    public partial class Entity : CharacterBody2D, IMovable, IGrounded, ITeleportable
+    public partial class Entity : CharacterBody2D
     {
-        /// <summary>
-        /// The entity's primary collision shape; must be assigned in the editor.
-        /// </summary>
-        /// <remarks>
-        /// Populated by Godot from the scene before <c>_Ready</c>; must be wired in the editor.
-        /// </remarks>
+        /// <summary>The entity's primary collision shape; must be wired in the editor.</summary>
         [ExportGroup("Nodes")]
         [Export] public CollisionShape2D Collision { get; private set; } = null!;
 
-        /// <summary>
-        /// Maximum travel speed for normal walking movement, in pixels per second; must be positive.
-        /// </summary>
+        /// <summary>Maximum walk speed in pixels per second.</summary>
         [ExportGroup("Movement")]
         [Export] public float MaxSpeed { get; set; } = 200f;
 
-        /// <summary>
-        /// Maximum travel speed whilst sprinting, in pixels per second; should exceed <see cref="MaxSpeed"/>.
-        /// </summary>
+        /// <summary>Maximum sprint speed in pixels per second; should exceed <see cref="MaxSpeed"/>.</summary>
         [Export] public float MaxSprintSpeed { get; set; } = 400f;
 
-        /// <summary>
-        /// Travel speed in pixels per second during a dodge burst; should exceed <see cref="MaxSprintSpeed"/> to feel responsive.
-        /// </summary>
+        /// <summary>Speed during a dodge burst in pixels per second; should exceed <see cref="MaxSprintSpeed"/>.</summary>
         [Export] public float MaxDodgeSpeed { get; set; } = 600f;
 
-        /// <summary>
-        /// Duration of a single dodge burst in seconds; the dodge state transitions to idle once this threshold is exceeded.
-        /// </summary>
+        /// <summary>Duration of a single dodge burst in seconds.</summary>
         [Export] public float MaxDodgeDurationSeconds { get; set; } = 0.25f;
 
-        /// <inheritdoc/>
-        /// <remarks>
-        /// Backed by <c>CharacterBody2D.Velocity</c> so Godot's physics helpers remain consistent with the value states write here.
-        /// </remarks>
+        /// <summary>
+        /// Velocity applied each physics tick. Backed by <c>CharacterBody2D.Velocity</c> so Godot's
+        /// physics helpers remain consistent with the value states write here.
+        /// </summary>
         public Vector2 MovementVelocity
         {
             get => Velocity;
             set => Velocity = value;
         }
 
-        /// <inheritdoc/>
+        /// <summary>True when the entity is resting on a floor surface; updated after each <c>MoveAndSlide</c>.</summary>
         public bool IsOnGround => IsOnFloor();
 
-        /// <inheritdoc/>
+        /// <summary>Sets <see cref="MovementVelocity"/> to zero.</summary>
         public void ZeroVelocity()
         {
             MovementVelocity = Vector2.Zero;
         }
 
         /// <summary>
-        /// Sealed physics tick entry point; calls <see cref="OnPhysicsTick"/> then <c>MoveAndSlide</c>.
+        /// Calls <see cref="OnPhysicsTick"/> then <c>MoveAndSlide</c>. Sealed so <c>MoveAndSlide</c>
+        /// always runs; subclasses override <see cref="OnPhysicsTick"/> instead.
         /// </summary>
-        /// <remarks>
-        /// Godot invokes <c>_PhysicsProcess</c> parent-before-child, so this method calls <c>MoveAndSlide</c>
-        /// before the child <c>StateMachine._PhysicsProcess</c> runs. Velocity written by the active state at tick N
-        /// is therefore consumed at tick N+1. Subclasses must override <see cref="OnPhysicsTick"/> rather than <c>_PhysicsProcess</c>.
-        /// </remarks>
         /// <param name="delta">Elapsed time since the last physics tick, in seconds.</param>
         public sealed override void _PhysicsProcess(double delta)
         {
@@ -78,7 +57,8 @@ namespace Vikare.Entities
         }
 
         /// <summary>
-        /// Per-physics-tick hook for subclasses; called before <c>MoveAndSlide</c>. Override to apply gravity or knockback.
+        /// Per-physics-tick hook called before <c>MoveAndSlide</c>. Override to apply gravity or knockback.
+        /// Default implementation is empty.
         /// </summary>
         /// <param name="delta">Elapsed time since the last physics tick, in seconds.</param>
         protected virtual void OnPhysicsTick(double delta)

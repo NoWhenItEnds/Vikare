@@ -4,42 +4,38 @@ using Vikare.Entities.Interfaces;
 namespace Vikare.Entities.States
 {
     /// <summary>
-    /// Resting state — zeros velocity and plays the idle animation. Transitions are driven by the machine's transition table.
+    /// Resting state — zeroes velocity and plays the idle animation. Transitions are driven entirely
+    /// by the machine's transition table; this state holds no per-intent data.
     /// </summary>
     public sealed class IdlingState : IState
     {
-        /// <summary>
-        /// Name of the idle animation clip; must match a clip in the entity's animation library.
-        /// </summary>
+        /// <summary>Idle animation clip name; must match the entity's animation library.</summary>
         private const string IdleAnimationName = "idle";
 
-        /// <inheritdoc/>
-        public void Enter(IStateContext context)
+        /// <summary>Zeroes velocity and plays the idle animation.</summary>
+        public void Enter(Actor actor)
         {
-            context.As<IMovable>()?.ZeroVelocity();
-            context.As<IAnimated>()?.PlayAnimation(IdleAnimationName);
+            actor.ZeroVelocity();
+            actor.PlayAnimation(IdleAnimationName);
         }
 
         /// <inheritdoc/>
-        public void Exit(IStateContext context)
-        {
-        }
-
-        /// <inheritdoc/>
-        public void Process(IStateContext context, double delta)
+        public void Exit(Actor actor)
         {
         }
 
         /// <inheritdoc/>
-        public void PhysicsProcess(IStateContext context, double delta)
+        public void Process(Actor actor, double delta)
         {
         }
 
         /// <inheritdoc/>
-        /// <remarks>
-        /// Idle holds no per-intent data; all transition logic lives in the machine's transition table.
-        /// </remarks>
-        public void HandleIntent(IStateContext context, IInputIntent intent)
+        public void PhysicsProcess(Actor actor, double delta)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void HandleIntent(Actor actor, ActionIntent intent)
         {
         }
     }
