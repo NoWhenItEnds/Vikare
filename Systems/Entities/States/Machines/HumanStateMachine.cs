@@ -1,5 +1,3 @@
-using Vikare.Entities.Intents;
-
 namespace Vikare.Entities.States.Machines
 {
     /// <summary>
@@ -12,10 +10,7 @@ namespace Vikare.Entities.States.Machines
     /// </remarks>
     public partial class HumanStateMachine : StateMachine
     {
-        /// <summary>
-        /// Registers all states and designates <see cref="IdlingState"/> as the initial state.
-        /// <see cref="AbilityState"/> handles both melee and power-cast steps.
-        /// </summary>
+        /// <inheritdoc/>
         protected override void RegisterStates()
         {
             RegisterState<IdlingState>();
@@ -32,23 +27,23 @@ namespace Vikare.Entities.States.Machines
         protected override void RegisterTransitions()
         {
             When<IdlingState>().On<WalkIntent>(i => i.Direction != Godot.Vector2.Zero).Transition<WalkingState>();
-            When<IdlingState>().On<BlockIntent>(i => i.IsBlocking).Transition<BlockingState>();
+            When<IdlingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<IdlingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
             When<IdlingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
 
             When<WalkingState>().On<WalkIntent>(i => i.Direction == Godot.Vector2.Zero).Transition<IdlingState>();
             When<WalkingState>().On<SprintIntent>(_ => true).Transition<SprintingState>();
-            When<WalkingState>().On<BlockIntent>(i => i.IsBlocking).Transition<BlockingState>();
+            When<WalkingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<WalkingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
             When<WalkingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
 
             When<SprintingState>().On<WalkIntent>(i => i.Direction == Godot.Vector2.Zero).Transition<IdlingState>();
             When<SprintingState>().On<WalkIntent>(i => i.Direction != Godot.Vector2.Zero).Transition<WalkingState>();
-            When<SprintingState>().On<BlockIntent>(i => i.IsBlocking).Transition<BlockingState>();
+            When<SprintingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<SprintingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
             When<SprintingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
 
-            When<BlockingState>().On<BlockIntent>(i => !i.IsBlocking).Transition<IdlingState>();
+            When<BlockingState>().On<BlockIntent>(_ => true).Transition<IdlingState>();
         }
     }
 }

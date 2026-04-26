@@ -15,8 +15,8 @@ namespace Vikare.Entities.Abilities
         /// </summary>
         [Export] public Vector2 Offset { get; set; } = Vector2.Zero;
 
-        /// <summary>Adds <see cref="Offset"/> to the actor's global position.</summary>
-        /// <param name="actor">The actor to displace.</param>
+
+        /// <inheritdoc/>
         public override void Execute(Actor actor)
         {
             actor.GlobalPosition += Offset;

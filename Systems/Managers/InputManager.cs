@@ -99,14 +99,5 @@ namespace Vikare.Managers
                 //DispatchCastPower("action_power_03", _player!.Power4);
             }
         }
-
-
-        private void DispatchCastPower(String actionName, Vector2 direction, PowerDefinition? power)
-        {
-            if (Input.IsActionJustPressed(actionName) && power != null)
-            {
-                _player!.Machine.HandleIntent(new PowerIntent(direction, power));
-            }
-        }
     }
 }

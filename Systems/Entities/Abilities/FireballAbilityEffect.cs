@@ -10,8 +10,7 @@ namespace Vikare.Entities.Abilities
     [GlobalClass]
     public partial class FireballAbilityEffect : AbilityEffect
     {
-        /// <summary>Stub implementation; prints a debug message until projectile spawning is implemented.</summary>
-        /// <param name="actor">The actor executing the ability step.</param>
+        /// <inheritdoc/>
         public override void Execute(Actor actor)
         {
             // STUB: replace with projectile spawn logic when the projectile system exists.

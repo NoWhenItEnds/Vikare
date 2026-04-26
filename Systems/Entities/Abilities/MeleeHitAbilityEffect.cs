@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace Vikare.Entities.Abilities
@@ -13,10 +14,10 @@ namespace Vikare.Entities.Abilities
         /// Base damage dealt on a successful hit. Not yet wired to a damage system; author it into
         /// step assets now and connect it when the damage pipeline exists. Must be non-negative.
         /// </summary>
-        [Export] public float BaseDamage { get; set; } = 10f;
+        [Export] public Single BaseDamage { get; set; } = 10f;
 
-        /// <summary>Stub implementation; prints a debug message until the damage system exists.</summary>
-        /// <param name="actor">The actor executing the hit.</param>
+
+        /// <inheritdoc/>
         public override void Execute(Actor actor)
         {
             // STUB: replace with hitbox query and damage dispatch when the damage system exists.
