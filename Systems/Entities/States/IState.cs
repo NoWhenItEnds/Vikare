@@ -1,6 +1,6 @@
 using Vikare.Entities.Intents;
 
-namespace Vikare.Entities.Interfaces
+namespace Vikare.Entities.States
 {
     /// <summary>
     /// Contract for a single state in the entity finite state machine. Concrete states represent one

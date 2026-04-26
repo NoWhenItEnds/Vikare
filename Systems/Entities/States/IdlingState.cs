@@ -1,5 +1,4 @@
 using Vikare.Entities.Intents;
-using Vikare.Entities.Interfaces;
 
 namespace Vikare.Entities.States
 {
