@@ -39,6 +39,7 @@ namespace Vikare.Managers
         /// <summary> Unregisters the current player, stopping all input dispatch. Safe to call when no player is registered. </summary>
         public void DeregisterPlayer()
         {
+            // TODO - Ensure that, if a player is removed, it deregisters itself on ExitTree();
             _player = null;
         }
 

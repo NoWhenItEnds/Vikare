@@ -1,47 +1,39 @@
+using System;
 using Godot;
 
 namespace Vikare.Entities.States
 {
-    /// <summary>
-    /// Moves the actor at <see cref="Vikare.Entities.Entity.MaxSprintSpeed"/> in the direction supplied
-    /// by the most-recent <see cref="SprintIntent"/>. Transitions are driven by the machine's transition table.
-    /// </summary>
+    /// <summary> An entity energetically moves in a direction. </summary>
     public sealed class SprintingState : IState
     {
-        /// <summary>Sprint animation clip name; must match the entity's animation library.</summary>
-        private const string SprintAnimationName = "sprint";
-
-        /// <summary>
-        /// Most-recently received movement direction. Reset to zero on entry to prevent direction
-        /// bleed from a prior activation; written by <see cref="HandleIntent"/>, read by
-        /// <see cref="PhysicsProcess"/>.
-        /// </summary>
+        /// <summary> Most-recently received movement direction. </summary>
         private Vector2 _currentDirection = Vector2.Zero;
 
-        /// <summary>Resets direction to zero and plays the sprint animation.</summary>
+
+        /// <inheritdoc/>
         public void Enter(Actor actor)
         {
             _currentDirection = Vector2.Zero;
-            actor.PlayAnimation(SprintAnimationName);
+            actor.PlayAnimation("sprint");
         }
+
 
         /// <inheritdoc/>
-        public void Exit(Actor actor)
-        {
-        }
+        public void Exit(Actor actor) { }
+
 
         /// <inheritdoc/>
-        public void Process(Actor actor, double delta)
-        {
-        }
+        public void Process(Actor actor, Double delta) { }
 
-        /// <summary>Applies <see cref="_currentDirection"/> scaled by <see cref="Vikare.Entities.Entity.MaxSprintSpeed"/> each tick.</summary>
+
+        /// <inheritdoc/>
         public void PhysicsProcess(Actor actor, double delta)
         {
-            actor.MovementVelocity = _currentDirection.Normalized() * actor.MaxSprintSpeed;
+            actor.Velocity = _currentDirection.Normalized() * 400f; // TODO - Replace with value from MovementComponent.
         }
 
-        /// <summary>Updates <see cref="_currentDirection"/> from incoming <see cref="SprintIntent"/> messages.</summary>
+
+        /// <inheritdoc/>
         public void HandleIntent(Actor actor, ActionIntent intent)
         {
             if (intent is SprintIntent sprintIntent)

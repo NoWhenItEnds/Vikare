@@ -1,39 +1,33 @@
+using System;
+using Godot;
+
 namespace Vikare.Entities.States
 {
-    /// <summary>
-    /// Resting state — zeroes velocity and plays the idle animation. Transitions are driven entirely
-    /// by the machine's transition table; this state holds no per-intent data.
-    /// </summary>
+    /// <summary> Resting state. Sit around looking pretty. </summary>
     public sealed class IdlingState : IState
     {
-        /// <summary>Idle animation clip name; must match the entity's animation library.</summary>
-        private const string IdleAnimationName = "idle";
-
-        /// <summary>Zeroes velocity and plays the idle animation.</summary>
+        /// <inheritdoc/>
         public void Enter(Actor actor)
         {
-            actor.ZeroVelocity();
-            actor.PlayAnimation(IdleAnimationName);
+            // Zeroes velocity and plays the idle animation.
+            actor.Velocity = Vector2.Zero;
+            actor.PlayAnimation("idle");
         }
 
-        /// <inheritdoc/>
-        public void Exit(Actor actor)
-        {
-        }
 
         /// <inheritdoc/>
-        public void Process(Actor actor, double delta)
-        {
-        }
+        public void Exit(Actor actor) { }
+
 
         /// <inheritdoc/>
-        public void PhysicsProcess(Actor actor, double delta)
-        {
-        }
+        public void Process(Actor actor, Double delta) { }
+
 
         /// <inheritdoc/>
-        public void HandleIntent(Actor actor, ActionIntent intent)
-        {
-        }
+        public void PhysicsProcess(Actor actor, Double delta) { }
+
+
+        /// <inheritdoc/>
+        public void HandleIntent(Actor actor, ActionIntent intent) { }
     }
 }
