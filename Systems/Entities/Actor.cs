@@ -20,6 +20,10 @@ namespace Vikare.Entities
         [ExportGroup("Combat")]
         [Export] public AbilitySequence? AbilitySequence { get; set; }  // TODO - ?
 
+        /// <summary> The abilities currently possessed by the actor. </summary>
+        [ExportGroup("Settings")]
+        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; }
+
 
         /// <inheritdoc/>
         public override void _Ready()

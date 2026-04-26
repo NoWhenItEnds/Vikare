@@ -43,15 +43,15 @@ namespace Vikare.Entities
     public class AbilityIntent : ActionIntent
     {
         /// <summary> A kind of ability being projected. </summary>
-        public AbilityEffect Effect { get; }
+        public AbilityEffect Ability { get; }
 
 
         /// <summary> The actor desires to use an ability (potentially on someone or something). </summary>
         /// <param name="direction"> Desired movement direction in world space; expected to be normalised or <see cref="Vector2.Zero"/>. </param>
         /// <param name="power"> A kind of ability being projected. </param>
-        public AbilityIntent(Vector2 direction, AbilityEffect effect) : base(direction)
+        public AbilityIntent(Vector2 direction, AbilityEffect ability) : base(direction)
         {
-            Effect = effect;
+            Ability = ability;
         }
     }
 }

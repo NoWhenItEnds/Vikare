@@ -29,19 +29,19 @@ namespace Vikare.Entities.States.Machines
             When<IdlingState>().On<WalkIntent>(i => i.Direction != Godot.Vector2.Zero).Transition<WalkingState>();
             When<IdlingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<IdlingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
-            When<IdlingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
+            When<IdlingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<WalkingState>().On<WalkIntent>(i => i.Direction == Godot.Vector2.Zero).Transition<IdlingState>();
             When<WalkingState>().On<SprintIntent>(_ => true).Transition<SprintingState>();
             When<WalkingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<WalkingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
-            When<WalkingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
+            When<WalkingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<SprintingState>().On<WalkIntent>(i => i.Direction == Godot.Vector2.Zero).Transition<IdlingState>();
             When<SprintingState>().On<WalkIntent>(i => i.Direction != Godot.Vector2.Zero).Transition<WalkingState>();
             When<SprintingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<SprintingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
-            When<SprintingState>().On<AbilityIntent>(i => i.Key != AbilityKey.None).Transition<AbilityState>();
+            When<SprintingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<BlockingState>().On<BlockIntent>(_ => true).Transition<IdlingState>();
         }

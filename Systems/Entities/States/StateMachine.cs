@@ -62,7 +62,7 @@ namespace Vikare.Entities.States
         /// <summary>
         /// The actor that owns this machine; cached from the parent node in <c>_Ready</c>.
         /// </summary>
-        private Actor? _actor;
+        protected Actor? _actor;
 
         /// <summary>
         /// Resolves the parent actor, registers states and transitions, validates the table,

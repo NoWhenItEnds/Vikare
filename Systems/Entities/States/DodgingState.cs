@@ -61,7 +61,7 @@ namespace Vikare.Entities.States
             /// Self-transition is performed by calling <c>actor.Machine.ChangeState</c> directly rather than
             /// via a synthetic intent, because the elapsed timer fires from the physics loop, not from a
             /// controller event, and an intent that no controller ever produces would pollute the intent surface.
-            if (shouldTransition)
+            if (_elapsed >= 0.25f)   // TODO - Pull from MovementComponent.
             {
                 actor.Machine.ChangeState<IdlingState>();
             }
@@ -69,6 +69,12 @@ namespace Vikare.Entities.States
 
 
         /// <inheritdoc/>
-        public void HandleIntent(Actor actor, ActionIntent intent) { }
+        public void HandleIntent(Actor actor, ActionIntent intent)
+        {
+            if (intent is DodgeIntent dodgeIntent)
+            {
+                _currentDirection = dodgeIntent.Direction;
+            }
+        }
     }
 }
