@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// Represents a physical melee hit landing at <see cref="AbilityStep.EffectFrameSeconds"/>.

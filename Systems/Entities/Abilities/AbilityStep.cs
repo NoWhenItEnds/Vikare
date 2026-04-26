@@ -1,8 +1,7 @@
 using Godot;
 using Godot.Collections;
-using Vikare.Entities.Intents;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// A single timed node in an ability graph. Unifies what were previously two separate resource

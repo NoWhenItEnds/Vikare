@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// Placeholder for projectile-based fire attacks. Assign a <c>.tres</c> asset of this type to any

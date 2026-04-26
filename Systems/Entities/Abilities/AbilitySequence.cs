@@ -1,8 +1,7 @@
 using Godot;
 using Godot.Collections;
-using Vikare.Entities.Intents;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// The full ability graph for a character's moveset. Contains all <see cref="AbilityStep"/> nodes

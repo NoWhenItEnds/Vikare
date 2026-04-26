@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using Vikare.Entities.Intents;
 
 namespace Vikare.Entities.States
 {

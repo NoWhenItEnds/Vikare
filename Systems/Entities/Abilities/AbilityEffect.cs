@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// Abstract base resource for any effect that fires at a designated frame within an ability step.

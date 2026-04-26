@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Vikare.Entities.Combat
+namespace Vikare.Entities.Abilities
 {
     /// <summary>
     /// Instantly displaces the actor by a fixed world-space offset, creating a blink-teleport effect.
