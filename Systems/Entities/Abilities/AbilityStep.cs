@@ -53,11 +53,57 @@ namespace Vikare.Entities.Abilities
         [Export] public AbilityEffect? Effect { get; set; }
 
         /// <summary>
-        /// Maps each <see cref="AbilityKey"/> (as its raw integer value) that can chain from this step
-        /// to the index of the successor step in the owning <see cref="AbilitySequence.Steps"/> array.
-        /// An absent key means that input is silently ignored. Adding a new chain type requires only a
+        /// Maps each ability type (represented by an exemplar <see cref="AbilityEffect"/> instance)
+        /// that can chain from this step to the index of the successor step in the owning
+        /// <see cref="AbilitySequence.Steps"/> array.
+        /// An absent type means that input is silently ignored. Adding a new chain type requires only a
         /// new entry here — no code changes required (OCP).
         /// </summary>
-        [Export] public Dictionary<int, int> Transitions { get; set; } = new();
+        /// <remarks>
+        /// Uses the same exemplar pattern as <see cref="AbilitySequence.EntrySteps"/>: the dictionary
+        /// key is any <c>.tres</c> instance of the correct subclass; runtime lookup compares
+        /// <c>GetType()</c> via <see cref="TryGetTransition"/>, not reference equality. See
+        /// <see cref="AbilitySequence"/> for a full explanation of the serialisation strategy.
+        /// </remarks>
+        [Export] public Dictionary<AbilityEffect, int> Transitions { get; set; } = new();
+
+        /// <summary>
+        /// Finds the chain successor step index for the ability type represented by
+        /// <paramref name="ability"/>. Compares by <c>GetType()</c> so any instance of the
+        /// matching subclass is a valid key, regardless of which <c>.tres</c> file it was loaded from.
+        /// </summary>
+        /// <param name="ability">
+        /// The ability whose subclass type is used as the lookup key. Typically sourced from
+        /// <see cref="Vikare.Entities.AbilityIntent.Ability"/>.
+        /// </param>
+        /// <param name="stepIndex">
+        /// Receives the successor step index when the method returns <c>true</c>; set to <c>-1</c>
+        /// (the sentinel) when the method returns <c>false</c>.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> when a matching chain was found; <c>false</c> when the ability type has no
+        /// registered transition from this step.
+        /// </returns>
+        public bool TryGetTransition(AbilityEffect ability, out int stepIndex)
+        {
+            System.Type abilityType = ability.GetType();
+            bool found = false;
+            int result = -1;
+
+            foreach (System.Collections.Generic.KeyValuePair<AbilityEffect, int> pair in Transitions)
+            {
+                bool alreadyFound = found;
+                bool typeMatches = pair.Key.GetType() == abilityType;
+
+                if (!alreadyFound && typeMatches)
+                {
+                    found = true;
+                    result = pair.Value;
+                }
+            }
+
+            stepIndex = result;
+            return found;
+        }
     }
 }

@@ -16,6 +16,12 @@ namespace Vikare.Entities.Abilities
     public abstract partial class AbilityEffect : Resource
     {
         /// <summary>
+        /// Slot identity used by <see cref="Actor.GetAbility"/> to locate this effect by category.
+        /// Each concrete subclass overrides this with its fixed category.
+        /// </summary>
+        public abstract AbilityCategory Category { get; }
+
+        /// <summary>
         /// Executes this effect's game logic at the effect frame within the ability step.
         /// Called at most once per step activation by <see cref="Vikare.Entities.States.AbilityState"/>.
         /// </summary>

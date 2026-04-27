@@ -4,11 +4,11 @@ using Godot;
 namespace Vikare.Entities.Abilities
 {
     /// <summary>
-    /// Represents a physical melee hit landing at <see cref="AbilityStep.EffectFrameSeconds"/>.
-    /// Assign to the <see cref="AbilityStep.Effect"/> slot of any melee-attack step.
+    /// Shared base for melee hit effects; concrete subclasses supply the slot category.
+    /// Assign a concrete subclass asset to <see cref="AbilityStep.Effect"/> for any melee-attack step.
     /// </summary>
     [GlobalClass]
-    public partial class MeleeHitAbilityEffect : AbilityEffect
+    public abstract partial class MeleeHitAbilityEffect : AbilityEffect
     {
         /// <summary>
         /// Base damage dealt on a successful hit. Not yet wired to a damage system; author it into

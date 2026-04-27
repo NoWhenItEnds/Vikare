@@ -107,10 +107,10 @@ namespace Vikare.Entities.States
         }
 
         /// <summary>
-        /// When unstarted: looks up the intent's key in <see cref="AbilitySequence.EntrySteps"/> to
-        /// find the root step; transitions to idle if the lookup fails.
+        /// When unstarted: looks up the intent's ability type in <see cref="AbilitySequence.EntrySteps"/>
+        /// to find the root step; transitions to idle if the lookup fails.
         /// When a step is active: attempts to chain to a successor if the elapsed time is inside the
-        /// cancel window and the active step's transitions map contains the key.
+        /// cancel window and the active step's transitions map contains the ability type.
         /// Non-<see cref="AbilityIntent"/> intents are silently ignored.
         /// </summary>
         public void HandleIntent(Actor actor, ActionIntent intent)
@@ -120,29 +120,37 @@ namespace Vikare.Entities.States
                 bool isUnstarted = _currentStepIndex == NoStepIndex;
                 if (isUnstarted)
                 {
-                    AdvanceToRootStep(actor, abilityIntent.Key);
+                    AdvanceToRootStep(actor, abilityIntent.Ability);
                 }
                 else
                 {
-                    TryChainStep(actor, abilityIntent.Key);
+                    TryChainStep(actor, abilityIntent.Ability);
                 }
             }
         }
 
         /// <summary>
-        /// Looks up <paramref name="key"/> in <see cref="AbilitySequence.EntrySteps"/> and starts the
-        /// root step. Transitions to <see cref="IdlingState"/> when the sequence is null, the key has
-        /// no entry, or the index is out of range.
+        /// Looks up <paramref name="ability"/>'s runtime type in <see cref="AbilitySequence.EntrySteps"/>
+        /// via <see cref="AbilitySequence.TryGetEntryStep"/> and starts the root step.
+        /// Transitions to <see cref="IdlingState"/> when the sequence is null, the ability type has no
+        /// registered entry point, or the resolved index is out of range.
         /// </summary>
-        private void AdvanceToRootStep(Actor actor, AbilityKey key)
+        /// <remarks>
+        /// Type identity (not reference equality) is used for the lookup — see
+        /// <see cref="AbilitySequence"/> for the rationale behind the exemplar serialisation strategy.
+        /// </remarks>
+        /// <param name="actor">The actor executing the ability.</param>
+        /// <param name="ability">
+        /// The ability from the triggering <see cref="AbilityIntent"/>; its runtime type is the lookup key.
+        /// </param>
+        private void AdvanceToRootStep(Actor actor, AbilityEffect ability)
         {
             bool sequenceAvailable = _sequence is not null;
-            int keyInt = (int)key;
             // rootIndex initialised to NoStepIndex so the rootValid guard is safe when
-            // sequenceAvailable is false and TryGetValue never runs.
+            // sequenceAvailable is false and TryGetEntryStep never runs.
             int rootIndex = NoStepIndex;
             bool entryExists = sequenceAvailable
-                && _sequence!.EntrySteps.TryGetValue(keyInt, out rootIndex);
+                && _sequence!.TryGetEntryStep(ability, out rootIndex);
 
             bool rootValid = entryExists
                 && rootIndex != NoStepIndex
@@ -160,10 +168,18 @@ namespace Vikare.Entities.States
 
         /// <summary>
         /// Attempts to chain to a successor step when a cancel-window <see cref="AbilityIntent"/>
-        /// arrives and the active step's transitions map contains <paramref name="key"/>.
+        /// arrives and the active step's transitions map contains the ability's runtime type.
         /// Silently discards the input if any condition is not met.
         /// </summary>
-        private void TryChainStep(Actor actor, AbilityKey key)
+        /// <remarks>
+        /// Type identity (not reference equality) is used for the lookup — see
+        /// <see cref="AbilitySequence"/> for the rationale behind the exemplar serialisation strategy.
+        /// </remarks>
+        /// <param name="actor">The actor executing the ability.</param>
+        /// <param name="ability">
+        /// The ability from the chaining <see cref="AbilityIntent"/>; its runtime type is the lookup key.
+        /// </param>
+        private void TryChainStep(Actor actor, AbilityEffect ability)
         {
             bool sequenceValid = _sequence is not null
                 && _currentStepIndex < _sequence.Steps.Count;
@@ -176,8 +192,7 @@ namespace Vikare.Entities.States
 
                 if (inWindow)
                 {
-                    int keyInt = (int)key;
-                    bool chainExists = current.Transitions.TryGetValue(keyInt, out int nextIndex);
+                    bool chainExists = current.TryGetTransition(ability, out int nextIndex);
                     if (chainExists)
                     {
                         bool chainValid = nextIndex != NoStepIndex

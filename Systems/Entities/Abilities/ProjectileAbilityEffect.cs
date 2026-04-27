@@ -11,6 +11,9 @@ namespace Vikare.Entities.Abilities
     public partial class ProjectileAbilityEffect : AbilityEffect
     {
         /// <inheritdoc/>
+        public override AbilityCategory Category => AbilityCategory.Projectile;
+
+        /// <inheritdoc/>
         public override void Execute(Actor actor)
         {
             // STUB: replace with projectile spawn logic when the projectile system exists.

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Vikare.Entities.Abilities;
 using Vikare.Entities.States;
@@ -22,13 +24,32 @@ namespace Vikare.Entities
 
         /// <summary> The abilities currently possessed by the actor. </summary>
         [ExportGroup("Settings")]
-        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; }
+        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new();
 
 
-        /// <inheritdoc/>
-        public override void _Ready()
+        /// <summary>
+        /// Returns the Nth ability in <see cref="Abilities"/> that matches <paramref name="category"/>,
+        /// where N is zero-based and determined by order of appearance. Returns null when no match exists.
+        /// </summary>
+        /// <param name="category">The category to search for.</param>
+        /// <param name="index">Zero-based position among matching abilities; defaults to the first match.</param>
+        public AbilityEffect? GetAbility(AbilityCategory category, int index = 0)
         {
-            base._Ready();
+            AbilityEffect? result = GetAbilities(category)
+                .ElementAtOrDefault(index);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Returns all abilities in <see cref="Abilities"/> that match <paramref name="category"/>,
+        /// in array order. Null slots (possible from partial editor assignment) are skipped.
+        /// Uses lazy enumeration to avoid allocating a Godot collection.
+        /// </summary>
+        /// <param name="category">The category to filter by.</param>
+        public IEnumerable<AbilityEffect> GetAbilities(AbilityCategory category)
+        {
+            return Abilities.Where(a => a != null && a.Category == category);
         }
 
 

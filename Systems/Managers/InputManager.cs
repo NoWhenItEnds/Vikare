@@ -1,18 +1,30 @@
 using System;
 using Godot;
 using Vikare.Entities;
+using Vikare.Entities.Abilities;
 using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
 {
-    /// <summary> Manages the input during game runtime. Translates raw Godot input events into <c>IInputIntent</c> instances and dispatches them to the registered player's state machine each frame. </summary>
+    /// <summary>
+    /// Manages input during game runtime. Translates raw Godot input events into
+    /// <see cref="ActionIntent"/> instances and dispatches them to the registered player's state
+    /// machine each frame. Ability slots are resolved via <see cref="Actor.GetAbility"/> using
+    /// <see cref="AbilityCategory"/> — no editor-assigned exemplars are required.
+    /// </summary>
     public partial class InputManager : SingletonNode<InputManager>
     {
-        /// <summary> Analogue deadzone. Filters out stick drift below this magnitude. </summary>
+        /// <summary>
+        /// Analogue stick deadzone. Input vectors with a magnitude below this threshold are treated
+        /// as zero to filter out hardware drift. Valid range: 0.0–1.0.
+        /// </summary>
         [ExportGroup("Settings")]
         [Export] private Single _analogueDeadzone = 0.2f;
 
-        /// <summary> The intent submitted the previous frame. A null indicates that there wasn't one. </summary>
+        /// <summary>
+        /// The intent submitted the previous frame. Null indicates that no intent was produced
+        /// last frame, which is a normal condition (e.g. when no player is registered).
+        /// </summary>
         private ActionIntent? _previousInput;
 
         /// <summary> The player actor currently receiving input; null when no player has registered. </summary>
@@ -65,13 +77,18 @@ namespace Vikare.Managers
                     intent = new SprintIntent(direction);
                 }
 
-                if (Input.IsActionJustPressed("action_attack_light"))
+                AbilityEffect? lightAbility = _player.GetAbility(AbilityCategory.LightAttack);
+                if (Input.IsActionJustPressed("action_attack_light") && lightAbility is not null)
                 {
-                    intent = new AbilityIntent(direction, AttackIntent.AttackKind.Light);
+                    intent = new AbilityIntent(direction, lightAbility);
                 }
-                else if (Input.IsActionJustPressed("action_attack_heavy"))
+                else
                 {
-                    intent = new AbilityIntent(direction, AttackIntent.AttackKind.Heavy);
+                    AbilityEffect? heavyAbility = _player.GetAbility(AbilityCategory.HeavyAttack);
+                    if (Input.IsActionJustPressed("action_attack_heavy") && heavyAbility is not null)
+                    {
+                        intent = new AbilityIntent(direction, heavyAbility);
+                    }
                 }
 
                 // Dodge / block should always interrupt.
@@ -90,7 +107,7 @@ namespace Vikare.Managers
                     intent = new WalkIntent(direction);
                 }
 
-                _player!.Machine.HandleIntent(intent);
+                _player.Machine.HandleIntent(intent);
                 _previousInput = intent;
 
                 //DispatchCastPower("action_power_00", _player!.Power1);
