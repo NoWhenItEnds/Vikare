@@ -14,7 +14,7 @@ namespace Vikare.Entities.States
 
         /// <summary>
         /// Seconds elapsed since the dodge began; compared against
-        /// <see cref="Vikare.Entities.Entity.MaxDodgeDurationSeconds"/> each tick.
+        /// <see cref="Actor.MaxDodgeDurationSeconds"/> each tick.
         /// Reset to zero on entry.
         /// </summary>
         private Double _elapsed = 0.0;
@@ -44,37 +44,25 @@ namespace Vikare.Entities.States
         public void Process(Actor actor, Double delta) { }
 
 
-        /// <inheritdoc/>
+        /// <summary>Advances the dodge timer, writes velocity unconditionally, and transitions to idle once the burst completes or the actor was stationary on entry.</summary>
         public void PhysicsProcess(Actor actor, Double delta)
         {
             _elapsed += delta;
+            actor.Velocity = _dodgeDirection * actor.MaxDodgeSpeed;
 
-            Boolean shouldTransition = _dodgeDirection == Vector2.Zero;
+            Boolean shouldTransition = _dodgeDirection == Vector2.Zero
+                || _elapsed >= actor.MaxDodgeDurationSeconds;
 
-            if (!shouldTransition)
-            {
-                actor.Velocity = _dodgeDirection * actor.MaxDodgeSpeed;
-                shouldTransition = _elapsed >= actor.MaxDodgeDurationSeconds;
-            }
-
-
-            /// Self-transition is performed by calling <c>actor.Machine.ChangeState</c> directly rather than
-            /// via a synthetic intent, because the elapsed timer fires from the physics loop, not from a
-            /// controller event, and an intent that no controller ever produces would pollute the intent surface.
-            if (_elapsed >= 0.25f)   // TODO - Pull from MovementComponent.
+            // Transition via ChangeState directly; the elapsed timer fires from the physics loop,
+            // not from a controller event, so a synthetic intent would pollute the intent surface.
+            if (shouldTransition)
             {
                 actor.Machine.ChangeState<IdlingState>();
             }
         }
 
 
-        /// <inheritdoc/>
-        public void HandleIntent(Actor actor, ActionIntent intent)
-        {
-            if (intent is DodgeIntent dodgeIntent)
-            {
-                _currentDirection = dodgeIntent.Direction;
-            }
-        }
+        /// <summary>Ignored — direction is locked at <see cref="Enter"/> and held constant until the dodge completes.</summary>
+        public void HandleIntent(Actor actor, ActionIntent intent) { }
     }
 }

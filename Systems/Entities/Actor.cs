@@ -26,6 +26,12 @@ namespace Vikare.Entities
         [ExportGroup("Settings")]
         [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new();
 
+        /// <summary>Maximum speed in units/second applied during a dodge burst.</summary>
+        [Export] public Single MaxDodgeSpeed { get; set; } = 8f;
+
+        /// <summary>Duration in seconds of a single dodge burst before transitioning back to idle.</summary>
+        [Export] public Double MaxDodgeDurationSeconds { get; set; } = 0.25;
+
 
         /// <summary>
         /// Returns the Nth ability in <see cref="Abilities"/> that matches <paramref name="category"/>,

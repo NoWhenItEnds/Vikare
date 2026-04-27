@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://bwcux83rh4l5k"]
-
-[ext_resource type="Script" uid="uid://d0mceewyx4obm" path="res://Systems/Entities/Entity.cs" id="1_8uhgi"]
-
-[node name="Entity" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Collision")]
-script = ExtResource("1_8uhgi")
-Collision = NodePath("CollisionShape2D")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]

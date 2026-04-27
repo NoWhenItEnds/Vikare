@@ -6,28 +6,18 @@ using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
 {
-    /// <summary>
-    /// Manages input during game runtime. Translates raw Godot input events into
-    /// <see cref="ActionIntent"/> instances and dispatches them to the registered player's state
-    /// machine each frame. Ability slots are resolved via <see cref="Actor.GetAbility"/> using
-    /// <see cref="AbilityCategory"/> — no editor-assigned exemplars are required.
-    /// </summary>
+    /// <summary> Translates raw Godot input events into <see cref="ActionIntent"/> instances and dispatches them to the registered player's state machine each frame. </summary>
     public partial class InputManager : SingletonNode<InputManager>
     {
-        /// <summary>
-        /// Analogue stick deadzone. Input vectors with a magnitude below this threshold are treated
-        /// as zero to filter out hardware drift. Valid range: 0.0–1.0.
-        /// </summary>
+        /// <summary> Analogue stick deadzone; vectors below this magnitude are treated as zero to suppress hardware drift. Valid range: 0.0–1.0. </summary>
         [ExportGroup("Settings")]
-        [Export] private Single _analogueDeadzone = 0.2f;
+        [Export(PropertyHint.Range, "0.0,1.0,")] private Single _analogueDeadzone = 0.2f;
 
-        /// <summary>
-        /// The intent submitted the previous frame. Null indicates that no intent was produced
-        /// last frame, which is a normal condition (e.g. when no player is registered).
-        /// </summary>
-        private ActionIntent? _previousInput;
+        /// <summary> Designer-editable list that maps Godot input actions to ability categories. The order resolves importance (0 = Highest priority). </summary>
+        [Export] public Godot.Collections.Array<AbilityBinding> AbilityBindings { get; set; } = new();
 
-        /// <summary> The player actor currently receiving input; null when no player has registered. </summary>
+
+        /// <summary> Player actor currently receiving input; null when no player has registered. </summary>
         private Actor? _player;
 
 
@@ -59,62 +49,93 @@ namespace Vikare.Managers
         /// <inheritdoc/>
         public override void _Process(Double delta)
         {
-            // Get the current direction this frame.
-            Vector2 direction = Input.GetVector(
-                "action_left",
-                "action_right",
-                "action_up",
-                "action_down",
-                _analogueDeadzone);
+            Vector2 direction = Input.GetVector("action_left", "action_right", "action_up", "action_down", _analogueDeadzone);
 
-            // If there is a player, we'll go through categories of actions. Each category overwrites the previous.
             if (_player != null)
             {
-                ActionIntent? intent = null;
-
-                if (Input.IsActionPressed("action_sprint"))
-                {
-                    intent = new SprintIntent(direction);
-                }
-
-                AbilityEffect? lightAbility = _player.GetAbility(AbilityCategory.LightAttack);
-                if (Input.IsActionJustPressed("action_attack_light") && lightAbility is not null)
-                {
-                    intent = new AbilityIntent(direction, lightAbility);
-                }
-                else
-                {
-                    AbilityEffect? heavyAbility = _player.GetAbility(AbilityCategory.HeavyAttack);
-                    if (Input.IsActionJustPressed("action_attack_heavy") && heavyAbility is not null)
-                    {
-                        intent = new AbilityIntent(direction, heavyAbility);
-                    }
-                }
-
-                // Dodge / block should always interrupt.
-                if (Input.IsActionJustPressed("action_dodge"))
-                {
-                    intent = new DodgeIntent(direction);
-                }
-                else if (Input.IsActionJustPressed("action_block"))
-                {
-                    intent = new BlockIntent(direction);
-                }
-
-                // If there has been no other inputs, default to walking.
-                if (intent == null)
-                {
-                    intent = new WalkIntent(direction);
-                }
-
+                ActionIntent intent = BuildIntent(direction, _player);
                 _player.Machine.HandleIntent(intent);
-                _previousInput = intent;
-
-                //DispatchCastPower("action_power_00", _player!.Power1);
-                //DispatchCastPower("action_power_01", _player!.Power2);
-                //DispatchCastPower("action_power_02", _player!.Power3);
-                //DispatchCastPower("action_power_03", _player!.Power4);
             }
         }
+
+
+        /// <summary>
+        /// Resolves all input actions for this frame into a single intent according to a fixed
+        /// priority. Higher entries in the list below always win a same-frame tie.
+        ///
+        /// Priority (highest first):
+        ///   1. Dodge
+        ///   2. Block
+        ///   3. Movement ability
+        ///   4. Defensive ability
+        ///   5. Heavy attack
+        ///   6. Projectile ability
+        ///   7. Utility ability
+        ///   8. Light attack
+        ///   9. Sprint
+        ///  10. Walk (default)
+        /// </summary>
+        /// <param name="direction"> Movement direction vector for the current frame. </param>
+        /// <param name="player"> The actor whose ability slots are queried during intent resolution. </param>
+        private ActionIntent BuildIntent(Vector2 direction, Actor player)
+        {
+            ActionIntent result = new WalkIntent(direction);
+
+            if (Input.IsActionPressed("action_sprint"))
+            {
+                result = new SprintIntent(direction);
+            }
+
+            AbilityEffect? ability = TryGetAbility(player);
+            if (ability != null)
+            {
+                result = new AbilityIntent(direction, ability);
+            }
+
+            if (Input.IsActionJustPressed("action_block"))
+            {
+                result = new BlockIntent(direction);
+            }
+
+            if (Input.IsActionJustPressed("action_dodge"))
+            {
+                result = new DodgeIntent(direction);
+            }
+
+            return result;
+        }
+
+
+        /// <summary> Check to see if an ability was pressed. The first binding matching the input will be chosen. </summary>
+        /// <param name="actor"> The actor whose <see cref="Actor.GetAbility"/> is queried on a match. </param>
+        private AbilityEffect? TryGetAbility(Actor actor)
+        {
+            AbilityEffect? result = null;
+
+            foreach (AbilityBinding binding in AbilityBindings)
+            {
+                if(result == null)
+                {
+                    if (Input.IsActionJustPressed(binding.Action))
+                    {
+                        result = actor.GetAbility(binding.Category);
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+
+
+    /// <summary> Maps one Godot input action to one ability category. </summary>
+    [GlobalClass]
+    public partial class AbilityBinding : Resource
+    {
+        /// <summary>Godot input action name (e.g. "action_attack_light"), as registered in Project &gt; Input Map.</summary>
+        [Export] public StringName Action { get; set; } = "";
+
+        /// <summary>The ability slot this action should trigger a lookup for.</summary>
+        [Export] public AbilityCategory Category { get; set; }
     }
 }

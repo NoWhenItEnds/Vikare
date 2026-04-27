@@ -12,35 +12,10 @@ namespace Vikare.Entities.Abilities
     /// add new movesets or entry-point slots (OCP).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Serialisation strategy — exemplar resources:</b> Godot 4 cannot serialise
-    /// <c>System.Type</c> directly via <c>[Export]</c>. This class uses the
-    /// <em>per-class exemplar</em> pattern as the bridge between the editor and
-    /// the runtime type system:
-    /// </para>
-    /// <list type="bullet">
-    ///   <item>
-    ///     In the editor, the designer creates a <c>.tres</c> asset of the appropriate
-    ///     <see cref="AbilityEffect"/> subclass (e.g. a <c>MeleeHitAbilityEffect.tres</c>) and
-    ///     places it as a key in <see cref="EntrySteps"/>.
-    ///   </item>
-    ///   <item>
-    ///     At runtime, <see cref="TryGetEntryStep"/> compares types via <c>GetType()</c>, not
-    ///     reference equality. Two different <c>.tres</c> files that are both
-    ///     <c>MeleeHitAbilityEffect</c> instances are treated as identical keys — the subclass
-    ///     itself is the canonical identity.
-    ///   </item>
-    ///   <item>
-    ///     The exemplar's exported property values (e.g. <c>BaseDamage</c>) are irrelevant to
-    ///     the lookup; any instance of the correct subclass acts as a valid key.
-    ///   </item>
-    /// </list>
-    /// <para>
-    /// This approach was chosen over <c>Array&lt;Script&gt;</c> keys because it keeps
-    /// the inspector experience type-safe and self-documenting: the designer sees the
-    /// concrete effect class directly, rather than a raw script reference. It also avoids
-    /// the overhead of Godot-to-C# script-to-type resolution at lookup time.
-    /// </para>
+    /// The designer assigns an exemplar <c>.tres</c> of the right <see cref="AbilityEffect"/> subclass
+    /// as a key in <see cref="EntrySteps"/> (e.g. a <c>LightMeleeAbilityEffect.tres</c>). At runtime,
+    /// <see cref="TryGetEntryStep"/> matches by <c>GetType()</c>, so any instance of the same subclass
+    /// is treated as the same key — the subclass itself is the canonical identity, not the specific asset.
     /// </remarks>
     [GlobalClass]
     public partial class AbilitySequence : Resource
@@ -57,10 +32,7 @@ namespace Vikare.Entities.Abilities
         /// type token — its property values do not affect the lookup. An absent type means that input
         /// will not start this sequence.
         /// </summary>
-        /// <remarks>
-        /// Use <see cref="TryGetEntryStep"/> for all runtime lookups. Do not query this dictionary
-        /// directly, as that would apply reference equality rather than the required type equality.
-        /// </remarks>
+        /// <remarks>Use <see cref="TryGetEntryStep"/> for all runtime lookups; direct dictionary access applies reference equality, not the required type equality.</remarks>
         [Export] public Dictionary<AbilityEffect, int> EntrySteps { get; set; } = new();
 
         /// <summary>

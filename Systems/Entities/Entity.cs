@@ -4,7 +4,7 @@ using Godot;
 namespace Vikare.Entities
 {
     /// <summary> Base class for all interactive entities within the game world. </summary>
-    public partial class Entity : CharacterBody2D
+    public abstract partial class Entity : CharacterBody2D
     {
         /// <summary> The entity's primary collision shape. </summary>
         [ExportGroup("Nodes")]
