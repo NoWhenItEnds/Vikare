@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using Vikare.Entities.Components;
 
 namespace Vikare.Entities.States
 {
@@ -9,17 +10,33 @@ namespace Vikare.Entities.States
         /// <summary> Most-recently received movement direction. </summary>
         private Vector2 _currentDirection = Vector2.Zero;
 
+        /// <summary> The current modifier applied to base speed. </summary>
+        private Single _speedModifier = 1f;
+
+        /// <summary> The basic, unmodified movement speed. </summary>
+        private const Single BASE_SPEED = 100f;
+
 
         /// <inheritdoc/>
         public void Enter(Actor actor)
         {
-            _currentDirection = Vector2.Zero;
+            AttributeComponent? attributeComponent = actor.GetComponent<AttributeComponent>();
+            if (attributeComponent != null)
+            {
+                // 10% of average of strength + finesse.
+                _speedModifier = 1f + (attributeComponent.Strength + attributeComponent.Finesse) * 0.05f;
+            }
+
             actor.PlayAnimation("walk");
         }
 
 
         /// <inheritdoc/>
-        public void Exit(Actor actor) { }
+        public void Exit(Actor actor)
+        {
+            _currentDirection = Vector2.Zero;
+            _speedModifier = 1f;
+        }
 
 
         /// <inheritdoc/>
@@ -29,7 +46,7 @@ namespace Vikare.Entities.States
         /// <inheritdoc/>
         public void PhysicsProcess(Actor actor, Double delta)
         {
-            actor.Velocity = _currentDirection.Normalized() * 200f; // TODO - Replace with value from MovementComponent.
+            actor.Velocity = _currentDirection.Normalized() * BASE_SPEED * _speedModifier;
         }
 
 

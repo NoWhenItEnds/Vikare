@@ -1,43 +1,51 @@
 using System;
 using Godot;
+using Vikare.Entities.Components;
 
 namespace Vikare.Entities.States
 {
-    /// <summary> An entity wishes to avoid danger by not being somewhere. </summary>
+    /// <summary> An entity wishes to avoid danger by not being where it currently is. </summary>
     public sealed class DodgingState : IState
     {
-        /// <summary>
-        /// Direction snapped from the actor's current velocity on entry; held constant for the burst.
-        /// Zero when the actor was stationary, causing an immediate idle transition.
-        /// </summary>
+        /// <summary> The absolute direction of the dodge. </summary>
+        /// <remarks> A Vector.Zero indicates that a direction hasn't currently been selected. </remarks>
         private Vector2 _dodgeDirection = Vector2.Zero;
 
-        /// <summary>
-        /// Seconds elapsed since the dodge began; compared against
-        /// <see cref="Actor.MaxDodgeDurationSeconds"/> each tick.
-        /// Reset to zero on entry.
-        /// </summary>
-        private Double _elapsed = 0.0;
+        /// <summary> The current time spent in the dodge state. The dodge state ends when this exceeds the target. </summary>
+        private Single _currentTime = 0f;
 
-        /// <summary>
-        /// Resets the timer, snaps the dodge direction from the actor's current velocity, and plays
-        /// the dodge animation.
-        /// </summary>
+        /// <summary> The total time that actor will spend in the dodge state. This is calculated on state Enter. </summary>
+        private Single _targetTime = 1f;    // TODO - This should be calculated from entity weight.
+
+        /// <summary> The current modifier applied to base speed. </summary>
+        private Single _speedModifier = 1f;
+
+        /// <summary> The basic, unmodified movement speed. </summary>
+        private const Single BASE_SPEED = 100f;
+
+
+        /// <inheritdoc/>
         public void Enter(Actor actor)
         {
-            _elapsed = 0.0;
-
-            Vector2 currentVelocity = actor.Velocity;
-            _dodgeDirection = currentVelocity != Vector2.Zero
-                ? currentVelocity.Normalized()
-                : Vector2.Zero;
+            AttributeComponent? attributeComponent = actor.GetComponent<AttributeComponent>();
+            if (attributeComponent != null)
+            {
+                // Average of strength + finesse.
+                _speedModifier = (attributeComponent.Strength + attributeComponent.Finesse) * 0.5f;
+            }
 
             actor.PlayAnimation("dodge");
         }
 
 
         /// <inheritdoc/>
-        public void Exit(Actor actor) { }
+        public void Exit(Actor actor)
+        {
+            _dodgeDirection = Vector2.Zero;
+            _currentTime = 0f;
+            _targetTime = 1f;
+            _speedModifier = 1f;
+        }
 
 
         /// <inheritdoc/>
@@ -47,22 +55,30 @@ namespace Vikare.Entities.States
         /// <summary>Advances the dodge timer, writes velocity unconditionally, and transitions to idle once the burst completes or the actor was stationary on entry.</summary>
         public void PhysicsProcess(Actor actor, Double delta)
         {
-            _elapsed += delta;
-            actor.Velocity = _dodgeDirection * actor.MaxDodgeSpeed;
+            _currentTime += (Single)delta;
+            actor.Velocity = _dodgeDirection.Normalized() * BASE_SPEED * _speedModifier;
 
-            Boolean shouldTransition = _dodgeDirection == Vector2.Zero
-                || _elapsed >= actor.MaxDodgeDurationSeconds;
-
-            // Transition via ChangeState directly; the elapsed timer fires from the physics loop,
-            // not from a controller event, so a synthetic intent would pollute the intent surface.
-            if (shouldTransition)
+            if (_currentTime >= _targetTime)
             {
                 actor.Machine.ChangeState<IdlingState>();
             }
         }
 
 
-        /// <summary>Ignored — direction is locked at <see cref="Enter"/> and held constant until the dodge completes.</summary>
-        public void HandleIntent(Actor actor, ActionIntent intent) { }
+        /// <inheritdoc/>
+        public void HandleIntent(Actor actor, ActionIntent intent)
+        {
+            if (intent is DodgeIntent dodgeIntent)
+            {
+                // If our dodge is zero, it's the first frame, and we haven't chosen a direction.
+                if (_dodgeDirection == Vector2.Zero)
+                {
+                    // Either dodge in the desired direction, or directly backwards.
+                    _dodgeDirection = dodgeIntent.Direction != Vector2.Zero ?
+                        dodgeIntent.Direction.Normalized() :
+                        -actor.Direction;
+                }
+            }
+        }
     }
 }

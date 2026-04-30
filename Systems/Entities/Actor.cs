@@ -14,14 +14,6 @@ namespace Vikare.Entities
         [ExportGroup("Nodes")]
         [Export] public StateMachine Machine { get; private set; } = null!;
 
-        /// <summary>
-        /// Ability graph used for melee attacks, power casts, and combo chains. Assign a <c>.tres</c>
-        /// asset in the editor. Null means no moveset is equipped; <see cref="AbilityState"/> returns
-        /// to idle immediately when this is null.
-        /// </summary>
-        [ExportGroup("Combat")]
-        [Export] public AbilitySequence? AbilitySequence { get; set; }  // TODO - ?
-
         /// <summary> The abilities currently possessed by the actor. </summary>
         [ExportGroup("Settings")]
         [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new();
@@ -31,6 +23,10 @@ namespace Vikare.Entities
 
         /// <summary>Duration in seconds of a single dodge burst before transitioning back to idle.</summary>
         [Export] public Double MaxDodgeDurationSeconds { get; set; } = 0.25;
+
+
+        /// <summary> The current direction the actor is facing. </summary>
+        public Vector2 Direction { get; private set; } = Vector2.Down;
 
 
         /// <summary>

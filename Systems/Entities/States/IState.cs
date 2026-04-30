@@ -24,7 +24,7 @@ namespace Vikare.Entities.States
         /// <summary> Called every physics tick while this state is active. Use for velocity writes and timers. </summary>
         /// <param name="actor"> The owning actor. </param>
         /// <param name="delta"> Elapsed time since the last physics tick, in seconds. </param>
-        public void PhysicsProcess(Actor actor, double delta);
+        public void PhysicsProcess(Actor actor, Double delta);
 
 
         /// <summary> Called when the controller produces an <see cref="ActionIntent"/>. Unknown intent types must be silently ignored. </summary>
