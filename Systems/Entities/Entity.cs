@@ -21,10 +21,38 @@ namespace Vikare.Entities
         private HashSet<EntityComponent> _components = new HashSet<EntityComponent>();
 
 
+        /// <summary> Try to add a new component of the given type. </summary>
+        /// <typeparam name="T"> The type of component to add. </typeparam>
+        /// <returns> A reference to the newly created component. </returns>
+        public T? TryAddComponent<T>() where T : EntityComponent, new()
+        {
+            T component = new T();
+            Boolean result = _components.Add(component);
+            return result ? component : null;
+        }
+
+
+        public T? TryAddComponent<T>(T component) where T : EntityComponent
+        {
+            Boolean result = false;
+
+            T? newComponent = component.DuplicateDeep() as T;
+            if(newComponent != null)
+            {
+                result = _components.Add(newComponent);
+            }
+
+            return result;
+        }
+
+
         /// <summary> Get the instance of the given component from the entity. </summary>
         /// <typeparam name="T"> The kind of component to get. </typeparam>
         /// <returns> A runtime reference to the component, or null if it doesn't exist. </returns>
         public T? GetComponent<T>() where T : EntityComponent => _components.OfType<T>().FirstOrDefault();
+
+
+        public void RemoveComponent<T>() where T : EntityComponent => _components.RemoveWhere(x => x.GetType().Equals(typeof(T)));
 
 
         /// <summary> Plays the named animation clip. </summary>

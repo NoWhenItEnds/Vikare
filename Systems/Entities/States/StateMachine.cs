@@ -48,7 +48,7 @@ namespace Vikare.Entities.States
         /// Registered transitions consulted in order on each <see cref="HandleIntent"/> call.
         /// The first matching entry wins.
         /// </summary>
-        private readonly List<TransitionEntry> _transitions = new();
+        private readonly List<TransitionEntry> _transitions = new List<TransitionEntry>();
 
         /// <summary>State the machine enters after <c>_Ready</c>; set by <see cref="SetInitialState{TState}"/>.</summary>
         private Type? _initialStateType;
