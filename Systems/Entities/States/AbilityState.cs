@@ -10,9 +10,11 @@ namespace Vikare.Entities.States
         /// <summary> The currently active ability. </summary>
         private AbilityEffect? _currentAbility = null;
 
+
         /// <inheritdoc/>
         /// <remarks> Despite it's name, this isn't used here. The initialise is actually HandleIntent. </remarks>
         public void Enter(Actor actor) { }
+
 
         /// <inheritdoc/>
         public void Exit(Actor actor)
@@ -20,23 +22,13 @@ namespace Vikare.Entities.States
             _currentAbility = null;
         }
 
+
         /// <inheritdoc/>
-        public void Process(Actor actor, Double delta)
-        {
-            _currentAbility?.Process(actor, delta);
-        }
+        public void Process(Actor actor, Double delta) => _currentAbility?.Process(delta, actor);
 
 
         /// <inheritdoc/>
-        public void PhysicsProcess(Actor actor, Double delta)
-        {
-            _currentAbility?.PhysicsProcess(actor, delta);
-
-            if(_currentAbility != null) // TODO - Implement Ability.Execute.
-            {
-                actor.Machine.ChangeState<IdlingState>();
-            }
-        }
+        public void PhysicsProcess(Actor actor, Double delta) => _currentAbility?.PhysicsProcess(delta, actor);
 
 
         /// <inheritdoc/>
@@ -45,7 +37,11 @@ namespace Vikare.Entities.States
             if (intent is AbilityIntent abilityIntent)
             {
                 _currentAbility = abilityIntent.Ability;
+                actor.PlayAnimation(_currentAbility.AnimationName);
             }
         }
+
+
+        public void Transition<T>(Actor actor) where T : IState => actor.Machine.ChangeState<T>();
     }
 }

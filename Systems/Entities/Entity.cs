@@ -32,11 +32,14 @@ namespace Vikare.Entities
         }
 
 
-        public T? TryAddComponent<T>(T component) where T : EntityComponent
+        /// <summary> Try to add the instance of a component to the entity. </summary>
+        /// <param name="component"> The component being added. </param>
+        /// <returns> Whether the component was successfully added. </returns>
+        public Boolean TryAddComponent(EntityComponent component)
         {
             Boolean result = false;
 
-            T? newComponent = component.DuplicateDeep() as T;
+            EntityComponent? newComponent = component.DuplicateDeep() as EntityComponent;
             if(newComponent != null)
             {
                 result = _components.Add(newComponent);
@@ -52,7 +55,16 @@ namespace Vikare.Entities
         public T? GetComponent<T>() where T : EntityComponent => _components.OfType<T>().FirstOrDefault();
 
 
-        public void RemoveComponent<T>() where T : EntityComponent => _components.RemoveWhere(x => x.GetType().Equals(typeof(T)));
+        /// <summary> Remove a type of component from the entity. </summary>
+        /// <typeparam name="T"> The type of component to remove. </typeparam>
+        /// <returns> Whether the component was successfully removed. </returns>
+        public Boolean RemoveComponent<T>() where T : EntityComponent => _components.RemoveWhere(x => x.GetType().Equals(typeof(T))) > 0;
+
+
+        /// <summary> Remove a specific instance of a component from the entity. </summary>
+        /// <param name="component"> The component to remove. </param>
+        /// <returns> Whether the component was successfully removed. </returns>
+        public Boolean RemoveComponent(EntityComponent component) => _components.Remove(component);
 
 
         /// <summary> Plays the named animation clip. </summary>

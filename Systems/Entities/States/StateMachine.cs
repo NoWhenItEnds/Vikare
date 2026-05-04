@@ -4,38 +4,26 @@ using Godot;
 
 namespace Vikare.Entities.States
 {
-    /// <summary>
-    /// Node-based finite state machine base class. Attach as a child of an <see cref="Vikare.Entities.Actor"/>.
-    /// Subclass it, override <see cref="RegisterStates"/> to call <see cref="RegisterState{TState}"/> and
-    /// <see cref="SetInitialState{TState}"/>, then override <see cref="RegisterTransitions"/> to declare
-    /// transitions via the fluent <see cref="When{TSource}"/> builder.
-    /// </summary>
-    /// <remarks>
-    /// Tick ordering: Godot processes parent nodes before children, so <c>Entity._PhysicsProcess</c>
-    /// (which calls <c>MoveAndSlide</c>) runs before the state machine's <c>_PhysicsProcess</c>.
-    /// Velocity written by the active state at tick N is consumed at tick N+1.
-    ///
-    /// Intent routing: <see cref="HandleIntent"/> consults the transition table first, fires any matching
-    /// transition, then delivers the intent to the (now-current) state so it always receives the intent
-    /// that triggered its entry.
-    /// </remarks>
+    /// <summary> Node-based finite state machine base class. Attach as a child of an <see cref="Vikare.Entities.Actor"/>. </summary>
     public abstract partial class StateMachine : Node
     {
-        /// <summary>
-        /// A row in the transition table: source state type, intent predicate, and target state type.
-        /// </summary>
+        /// <summary> A row in the transition table: source state type, intent predicate, and target state type. </summary>
         internal readonly struct TransitionEntry
         {
-            /// <summary>Source state type; matched against <c>_currentState.GetType()</c>.</summary>
+            /// <summary> Source state type; matched against <c>_currentState.GetType()</c>. </summary>
             public Type SourceType { get; }
 
-            /// <summary>Returns true when the intent satisfies the condition for this transition.</summary>
-            public Func<ActionIntent, bool> Predicate { get; }
+            /// <summary> Returns true when the intent satisfies the condition for this transition. </summary>
+            public Func<ActionIntent, Boolean> Predicate { get; }
 
-            /// <summary>State type to enter when the predicate matches.</summary>
+            /// <summary> State type to enter when the predicate matches. </summary>
             public Type TargetType { get; }
 
-            /// <summary>Initialises all three fields.</summary>
+
+            /// <summary> A row in the transition table: source state type, intent predicate, and target state type. </summary>
+            /// <param name="sourceType"> Source state type; matched against <c>_currentState.GetType()</c>. </param>
+            /// <param name="predicate"> Returns true when the intent satisfies the condition for this transition. </param>
+            /// <param name="targetType"> State type to enter when the predicate matches. </param>
             public TransitionEntry(Type sourceType, Func<ActionIntent, bool> predicate, Type targetType)
             {
                 SourceType = sourceType;
@@ -44,41 +32,31 @@ namespace Vikare.Entities.States
             }
         }
 
-        /// <summary>
-        /// Registered transitions consulted in order on each <see cref="HandleIntent"/> call.
-        /// The first matching entry wins.
-        /// </summary>
+
+        /// <summary> Registered transitions consulted in order on each <see cref="HandleIntent"/> call. </summary>
         private readonly List<TransitionEntry> _transitions = new List<TransitionEntry>();
 
-        /// <summary>State the machine enters after <c>_Ready</c>; set by <see cref="SetInitialState{TState}"/>.</summary>
+        /// <summary> State the machine enters after <c>_Ready</c>; set by <see cref="SetInitialState{TState}"/>. </summary>
         private Type? _initialStateType;
 
-        /// <summary>All registered states keyed by concrete type.</summary>
-        private readonly Dictionary<Type, IState> _states = new();
+        /// <summary> All registered states keyed by concrete type. </summary>
+        private readonly Dictionary<Type, IState> _states = new Dictionary<Type, IState>();
 
-        /// <summary>Currently active state; null only before <c>_Ready</c> completes.</summary>
+        /// <summary> Currently active state; null only before <c>_Ready</c> completes. </summary>
         private IState? _currentState;
 
-        /// <summary>
-        /// The actor that owns this machine; cached from the parent node in <c>_Ready</c>.
-        /// </summary>
+        /// <summary> The actor that owns this machine; cached from the parent node in <c>_Ready</c>. </summary>
         protected Actor? _actor;
 
-        /// <summary>
-        /// Resolves the parent actor, registers states and transitions, validates the table,
-        /// then enters the initial state.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when the initial state was not set, or the transition table references an unregistered type.
-        /// </exception>
+
+        /// <inheritdoc/>
         public override void _Ready()
         {
             _actor = GetParent<Actor>();
 
             RegisterStates();
 
-            bool initialStateMissing = _initialStateType == null;
-            if (initialStateMissing)
+            if (_initialStateType == null)  // Initial state missing.
             {
                 throw new InvalidOperationException(
                     $"{GetType().Name} did not call SetInitialState<T>() inside RegisterStates(). " +
@@ -91,33 +69,23 @@ namespace Vikare.Entities.States
             EnterState(_states[_initialStateType!]);
         }
 
-        /// <summary>Forwards the visual-frame tick to the active state.</summary>
-        /// <param name="delta">Elapsed time since the last visual frame, in seconds.</param>
-        public override void _Process(double delta)
-        {
-            _currentState?.Process(_actor!, delta);
-        }
 
-        /// <summary>Forwards the physics tick to the active state.</summary>
-        /// <param name="delta">Elapsed time since the last physics tick, in seconds.</param>
-        public override void _PhysicsProcess(double delta)
-        {
-            _currentState?.PhysicsProcess(_actor!, delta);
-        }
+        /// <inheritdoc/>
+        public override void _Process(Double delta) => _currentState?.Process(_actor!, delta);
 
-        /// <summary>
-        /// Consults the transition table, fires the first matching transition, then delivers the intent
-        /// to the now-current state. Silently dropped if the machine has not yet initialised.
-        /// </summary>
-        /// <param name="intent">The controller's intent.</param>
+
+        /// <inheritdoc/>
+        public override void _PhysicsProcess(Double delta) => _currentState?.PhysicsProcess(_actor!, delta);
+
+        /// <summary> Consults the transition table, fires the first matching transition, then delivers the intent to the now-current state. </summary>
+        /// <param name="intent"> The controller's intent. </param>
         public void HandleIntent(ActionIntent intent)
         {
-            bool isReady = _currentState != null && _actor != null;
+            Boolean isReady = _currentState != null && _actor != null;
             if (isReady)
             {
                 Type? matchedTarget = FindTransitionTarget(intent);
-                bool transitionFound = matchedTarget != null;
-                if (transitionFound)
+                if (matchedTarget != null)  // Transition found.
                 {
                     ChangeState(matchedTarget!);
                 }

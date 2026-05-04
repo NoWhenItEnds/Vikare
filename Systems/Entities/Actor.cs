@@ -16,13 +16,7 @@ namespace Vikare.Entities
 
         /// <summary> The abilities currently possessed by the actor. </summary>
         [ExportGroup("Settings")]
-        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new();
-
-        /// <summary>Maximum speed in units/second applied during a dodge burst.</summary>
-        [Export] public Single MaxDodgeSpeed { get; set; } = 8f;
-
-        /// <summary>Duration in seconds of a single dodge burst before transitioning back to idle.</summary>
-        [Export] public Double MaxDodgeDurationSeconds { get; set; } = 0.25;
+        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new Godot.Collections.Array<AbilityEffect>();
 
 
         /// <summary> The current direction the actor is facing. </summary>
@@ -35,7 +29,7 @@ namespace Vikare.Entities
         /// </summary>
         /// <param name="category">The category to search for.</param>
         /// <param name="index">Zero-based position among matching abilities; defaults to the first match.</param>
-        public AbilityEffect? GetAbility(AbilityCategory category, int index = 0)
+        public AbilityEffect? GetAbility(AbilityCategory category, Int32 index = 0)
         {
             AbilityEffect? result = GetAbilities(category)
                 .ElementAtOrDefault(index);

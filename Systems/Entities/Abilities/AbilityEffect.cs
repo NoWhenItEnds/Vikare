@@ -3,35 +3,33 @@ using Godot;
 
 namespace Vikare.Entities.Abilities
 {
-    /// <summary> Abstract base resource for any ability that an actor can possess. </remarks>
+    /// <summary> Abstract base resource for any ability that an actor can possess. </summary>
+    /// <remarks> A specific instance of an ability is shared between all its users, so it cannot track state for a specific entity. </remarks>
     [GlobalClass]
     public abstract partial class AbilityEffect : Resource
     {
-        /// <summary> How long the ability takes to wind up before executing. </summary>
+        /// <summary> Clip name that the actor's AnimationPlayer plays when this ability activates. </summary>
         [ExportGroup("Settings")]
-        [Export] public Single WindUpTime = 1f;
-
-        /// <summary> How long the ability takes to wind down after executing. </summary>
-        [Export] public Single WindDownTime = 1f;
+        [Export] public String AnimationName { get; set; } = String.Empty;
 
 
         /// <summary> Slot identity. Each concrete subclass overrides this with its fixed category. </summary>
         public abstract AbilityCategory Category { get; }
 
 
-        /// <summary> Called every visual frame while this ability is active. Use for visuals-only updates. </summary>
-        /// <param name="actor"> The owning actor. </param>
+        /// <summary> Called every visual frame whilst this ability is active. Use for visuals-only updates. </summary>
         /// <param name="delta"> Elapsed time since the last visual frame, in seconds. </param>
-        public virtual void Process(Actor actor, Double delta) { }
+        /// <param name="actor"> The entity currently performing this ability. </param>
+        public virtual void Process(Double delta, Actor actor) { }
 
 
-        /// <summary> Called every physics tick while this ability is active. Use for velocity writes and timers. </summary>
-        /// <param name="actor"> The owning actor. </param>
+        /// <summary> Called every physics tick whilst this ability is active. Use for velocity writes. </summary>
         /// <param name="delta"> Elapsed time since the last physics tick, in seconds. </param>
-        public virtual void PhysicsProcess(Actor actor, Double delta) { }
+        /// <param name="actor"> The entity currently performing this ability. </param>
+        public virtual void PhysicsProcess(Double delta, Actor actor) { }
 
 
-        /// <summary> Actually execute the affect. </summary>
+        /// <summary> Applies the ability's effect at the hit frame indicated by the animation method-call track. </summary>
         /// <param name="actor"> The owning actor. </param>
         public abstract void Execute(Actor actor);
     }
