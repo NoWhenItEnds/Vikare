@@ -15,7 +15,7 @@ namespace Vikare.Entities.States
         private Single _currentTime = 0f;
 
         /// <summary> The total time that actor will spend in the dodge state. This is calculated on state Enter. </summary>
-        private Single _targetTime = 1f;    // TODO - This should be calculated from entity weight.
+        private Single _targetTime = 0.25f;    // TODO - This should be calculated from entity weight.
 
         /// <summary> The current modifier applied to base speed. </summary>
         private Single _speedModifier = 1f;
@@ -43,7 +43,7 @@ namespace Vikare.Entities.States
         {
             _dodgeDirection = Vector2.Zero;
             _currentTime = 0f;
-            _targetTime = 1f;
+            _targetTime = 0.25f;
             _speedModifier = 1f;
         }
 

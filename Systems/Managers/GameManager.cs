@@ -8,7 +8,7 @@ namespace Vikare.Managers
     /// <summary> The game world's central manager singleton. </summary>
     public partial class GameManager : SingletonNode<GameManager>
     {
-        [Export] private Actor _player;
+        [Export] private Actor _player = null!;
 
         /// <inheritdoc/>
         public override void _Ready()

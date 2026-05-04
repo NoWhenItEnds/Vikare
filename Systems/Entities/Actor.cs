@@ -14,13 +14,13 @@ namespace Vikare.Entities
         [ExportGroup("Nodes")]
         [Export] public StateMachine Machine { get; private set; } = null!;
 
-        /// <summary> The abilities currently possessed by the actor. </summary>
-        [ExportGroup("Settings")]
-        [Export] public Godot.Collections.Array<AbilityEffect> Abilities { get; private set; } = new Godot.Collections.Array<AbilityEffect>();
-
 
         /// <summary> The current direction the actor is facing. </summary>
         public Vector2 Direction { get; private set; } = Vector2.Down;
+
+
+        /// <summary> The abilities currently possessed by the actor. </summary>
+        private HashSet<AbilityEffect> _abilities = new HashSet<AbilityEffect>();
 
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Vikare.Entities
         /// <param name="category">The category to filter by.</param>
         public IEnumerable<AbilityEffect> GetAbilities(AbilityCategory category)
         {
-            return Abilities.Where(a => a != null && a.Category == category);
+            return _abilities.Where(a => a != null && a.Category == category);
         }
 
 
@@ -53,6 +53,10 @@ namespace Vikare.Entities
         public override void _PhysicsProcess(Double delta)
         {
             base._PhysicsProcess(delta);
+            if(Velocity != Vector2.Zero)
+            {
+                Direction = Velocity.Normalized();  // Set the direction the actor is currently facing.
+            }
             MoveAndSlide(); // End each frame with a slide.
         }
     }

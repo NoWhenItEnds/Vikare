@@ -29,12 +29,13 @@ namespace Vikare.Entities.States.Machines
         protected override void RegisterTransitions()
         {
             When<IdlingState>().On<WalkIntent>(i => i.Direction != Vector2.Zero).Transition<WalkingState>();
+            When<IdlingState>().On<SprintIntent>(i => i.Direction != Vector2.Zero).Transition<SprintingState>();
             When<IdlingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<IdlingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
             //When<IdlingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<WalkingState>().On<WalkIntent>(i => i.Direction == Vector2.Zero).Transition<IdlingState>();
-            When<WalkingState>().On<SprintIntent>(_ => true).Transition<SprintingState>();
+            When<WalkingState>().On<SprintIntent>(i => i.Direction != Vector2.Zero).Transition<SprintingState>();
             When<WalkingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<WalkingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
             //When<WalkingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
