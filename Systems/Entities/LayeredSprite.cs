@@ -46,16 +46,18 @@ namespace Vikare.Entities
 
 
         /// <summary> Play the given animation. </summary>
-        /// <param name="animationName"> The animation name. </param>
-        public void PlayAnimation(String animationName)
+        /// <param name="libraryName"> The name of the animation library to search for. </param>
+        /// <param name="animationName"> The name of the animation within the library to use. </param>
+        public void PlayAnimation(String libraryName, String animationName)
         {
-            if (_animationPlayer.HasAnimation(animationName))
+            AnimationLibrary? library = _animationPlayer.GetAnimationLibrary(libraryName);
+            if(library != null)
             {
-                _animationPlayer.Play(animationName);
-            }
-            else
-            {
-                GD.PushWarning($"{Name} attempted to play '{animationName}'; which it doesn't have!");
+                Animation? animation = library.GetAnimation(animationName);
+                if(animation != null)
+                {
+                    _animationPlayer.Play($"{libraryName}/{animationName}");
+                }
             }
         }
 

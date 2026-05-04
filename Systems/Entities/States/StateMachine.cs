@@ -33,6 +33,10 @@ namespace Vikare.Entities.States
         }
 
 
+        /// <summary> The name of the animation library to use for this state machine. </summary>
+        public abstract String AnimationLibrary { get; }
+
+
         /// <summary> Registered transitions consulted in order on each <see cref="HandleIntent"/> call. </summary>
         private readonly List<TransitionEntry> _transitions = new List<TransitionEntry>();
 

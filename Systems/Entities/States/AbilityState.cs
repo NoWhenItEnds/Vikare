@@ -7,6 +7,10 @@ namespace Vikare.Entities.States
     /// <remarks> This state is just a wrapper for AbilityEffects. In this configuration, this state works like a state machine, with the effect working like a state (just one shared with **every** actor). </remarks>
     public sealed class AbilityState : IState
     {
+        /// <inheritdoc/>
+        public String AnimationName => "";
+
+
         /// <summary> The currently active ability. </summary>
         private AbilityEffect? _currentAbility = null;
 
@@ -37,7 +41,7 @@ namespace Vikare.Entities.States
             if (intent is AbilityIntent abilityIntent)
             {
                 _currentAbility = abilityIntent.Ability;
-                actor.PlayAnimation(_currentAbility.AnimationName);
+                actor.PlayAnimation("human", _currentAbility.AnimationName);
             }
         }
 

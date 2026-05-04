@@ -1,17 +1,15 @@
+using System;
 using Godot;
 
 namespace Vikare.Entities.States.Machines
 {
-    /// <summary>
-    /// State machine for human-type entities. Registers idle, walk, sprint, block, dodge, and ability states.
-    /// </summary>
-    /// <remarks>
-    /// Ability activation is permitted from idle, walk, and sprint only — not from block or dodge.
-    /// Cancel-window combo links are handled internally by <see cref="AbilityState"/>; no transition table
-    /// entries are needed here for those paths.
-    /// </remarks>
+    /// <summary> State machine for human-type entities. </summary>
     public partial class HumanStateMachine : StateMachine
     {
+        /// <inheritdoc/>
+        public override String AnimationLibrary => "human";
+
+
         /// <inheritdoc/>
         protected override void RegisterStates()
         {
@@ -24,6 +22,7 @@ namespace Vikare.Entities.States.Machines
 
             SetInitialState<IdlingState>();
         }
+
 
         /// <inheritdoc/>
         protected override void RegisterTransitions()

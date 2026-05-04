@@ -7,6 +7,10 @@ namespace Vikare.Entities.States
     /// <summary> An entity leisurely moves in a direction. </summary>
     public sealed class WalkingState : IState
     {
+        /// <inheritdoc/>
+        public String AnimationName => "walk";
+
+
         /// <summary> Most-recently received movement direction. </summary>
         private Vector2 _currentDirection = Vector2.Zero;
 
@@ -27,7 +31,7 @@ namespace Vikare.Entities.States
                 _speedModifier = 1f + (attributeComponent.Strength + attributeComponent.Finesse) * 0.05f;
             }
 
-            actor.PlayAnimation("walk");
+            actor.PlayAnimation("human", AnimationName);
         }
 
 

@@ -4,8 +4,11 @@
 [ext_resource type="Script" uid="uid://7poweulbel25" path="res://Systems/Entities/States/Machines/HumanStateMachine.cs" id="2_jl7u3"]
 [ext_resource type="Texture2D" uid="uid://trlvcm1ui24x" path="res://icon.svg" id="3_5ieec"]
 [ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="4_g5nf1"]
+[ext_resource type="AnimationLibrary" uid="uid://cogv3qck18784" path="res://Content/Resources/AnimationLibraries/AnimationLibrary_Human.tres" id="5_h0nk2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jl7u3"]
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vhr8m"]
 
 [node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")
@@ -30,3 +33,5 @@ _animationPlayer = NodePath("AnimationPlayer")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="LayeredSprite" unique_id=839838539]
 root_node = NodePath("../..")
+libraries/ = SubResource("AnimationLibrary_vhr8m")
+libraries/human = ExtResource("5_h0nk2")

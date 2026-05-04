@@ -7,6 +7,10 @@ namespace Vikare.Entities.States
     /// <summary> An entity wishes to avoid danger by not being where it currently is. </summary>
     public sealed class DodgingState : IState
     {
+        /// <inheritdoc/>
+        public String AnimationName => "dodge";
+
+
         /// <summary> The absolute direction of the dodge. </summary>
         /// <remarks> A Vector.Zero indicates that a direction hasn't currently been selected. </remarks>
         private Vector2 _dodgeDirection = Vector2.Zero;
@@ -34,7 +38,7 @@ namespace Vikare.Entities.States
                 _speedModifier = (attributeComponent.Strength + attributeComponent.Finesse) * 0.5f;
             }
 
-            actor.PlayAnimation("dodge");
+            actor.PlayAnimation("human", AnimationName);
         }
 
 

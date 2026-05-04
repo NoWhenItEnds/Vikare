@@ -7,11 +7,15 @@ namespace Vikare.Entities.States
     public sealed class IdlingState : IState
     {
         /// <inheritdoc/>
+        public String AnimationName => "idle";
+
+
+        /// <inheritdoc/>
         public void Enter(Actor actor)
         {
             // Zeroes velocity and plays the idle animation.
             actor.Velocity = Vector2.Zero;
-            actor.PlayAnimation("idle");
+            actor.PlayAnimation("human", AnimationName);
         }
 
 

@@ -5,6 +5,9 @@ namespace Vikare.Entities.States
     /// <summary> Contract for a single state in the entity finite state machine. </summary>
     public interface IState
     {
+        /// <summary> The name of the animation to use for this state. </summary>
+        public String AnimationName { get; }
+
         /// <summary> Called once when this state becomes active. Play the entry animation and reset local fields. </summary>
         /// <param name="actor"> The actor entering this state. </param>
         public void Enter(Actor actor);

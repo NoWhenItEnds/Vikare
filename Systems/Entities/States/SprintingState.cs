@@ -7,6 +7,9 @@ namespace Vikare.Entities.States
     /// <summary> An entity energetically moves in a direction. </summary>
     public sealed class SprintingState : IState
     {
+        /// <inheritdoc/>
+        public String AnimationName => "sprint";
+
         /// <summary> Most-recently received movement direction. </summary>
         private Vector2 _currentDirection = Vector2.Zero;
 
@@ -27,7 +30,7 @@ namespace Vikare.Entities.States
                 _speedModifier = (attributeComponent.Strength + attributeComponent.Finesse) * 0.5f;
             }
 
-            actor.PlayAnimation("sprint");
+            actor.PlayAnimation("human", AnimationName);
         }
 
 

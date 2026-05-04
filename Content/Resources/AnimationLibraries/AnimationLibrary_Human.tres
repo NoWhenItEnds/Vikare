@@ -1,0 +1,25 @@
+[gd_resource type="AnimationLibrary" format=3 uid="uid://cogv3qck18784"]
+
+[sub_resource type="Animation" id="Animation_wyqf2"]
+resource_name = "block"
+
+[sub_resource type="Animation" id="Animation_8bfp0"]
+resource_name = "dodge"
+
+[sub_resource type="Animation" id="Animation_4ww7r"]
+resource_name = "idle"
+
+[sub_resource type="Animation" id="Animation_m8jkx"]
+resource_name = "sprint"
+
+[sub_resource type="Animation" id="Animation_m1auj"]
+resource_name = "walk"
+
+[resource]
+_data = {
+&"block": SubResource("Animation_wyqf2"),
+&"dodge": SubResource("Animation_8bfp0"),
+&"idle": SubResource("Animation_4ww7r"),
+&"sprint": SubResource("Animation_m8jkx"),
+&"walk": SubResource("Animation_m1auj")
+}

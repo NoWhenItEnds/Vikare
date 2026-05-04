@@ -68,14 +68,15 @@ namespace Vikare.Entities
 
 
         /// <summary> Plays the named animation clip. </summary>
-        /// <param name="animationName"> Clip name as defined in the animation library. </param>
+        /// <param name="libraryName"> The name of the animation library to search for. </param>
+        /// <param name="animationName"> The name of the animation within the library to use. </param>
         /// <remarks> No-op if that clip is already playing, preventing looping animations from restarting each tick. </remarks>
-        public void PlayAnimation(String animationName)
+        public void PlayAnimation(String libraryName, String animationName)
         {
             Boolean alreadyPlaying = Sprite.CurrentAnimation == animationName && Sprite.IsPlaying;
             if (!alreadyPlaying)
             {
-                Sprite.PlayAnimation(animationName);
+                Sprite.PlayAnimation(libraryName, animationName);
             }
         }
     }

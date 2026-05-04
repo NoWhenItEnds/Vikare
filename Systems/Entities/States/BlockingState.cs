@@ -7,10 +7,14 @@ namespace Vikare.Entities.States
     public sealed class BlockingState : IState
     {
         /// <inheritdoc/>
+        public String AnimationName => "block";
+
+
+        /// <inheritdoc/>
         public void Enter(Actor actor)
         {
             actor.Velocity = Vector2.Zero;
-            actor.PlayAnimation("block");
+            actor.PlayAnimation("human", AnimationName);
         }
 
 
