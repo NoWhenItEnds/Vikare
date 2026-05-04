@@ -27,7 +27,6 @@ namespace Vikare.Managers
         {
             if (_player != null)
             {
-                // TODO - Make a proper logging system.
                 GD.PushWarning(
                     $"[InputManager] SetPlayer called whilst '{_player.Name}' is already registered. " +
                     $"Overwriting with '{player.Name}'.");
@@ -41,7 +40,6 @@ namespace Vikare.Managers
         /// <summary> Unregisters the current player, stopping all input dispatch. Safe to call when no player is registered. </summary>
         public void DeregisterPlayer()
         {
-            // TODO - Ensure that, if a player is removed, it deregisters itself on ExitTree();
             _player = null;
         }
 
