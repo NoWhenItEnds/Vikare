@@ -13,8 +13,8 @@ namespace Vikare.Entities
         [ExportGroup("Nodes")]
         [Export] public CollisionShape2D Collision { get; private set; } = null!;
 
-        /// <summary> Animation player driving this entity's visual state. </summary>
-        [Export] public AnimationPlayer AnimationPlayer { get; private set; } = null!;
+        /// <summary> The sprite driving this entity's visual state. </summary>
+        [Export] public LayeredSprite Sprite { get; private set; } = null!;
 
 
         /// <summary> An array of all the components on the current entity. </summary>
@@ -72,12 +72,10 @@ namespace Vikare.Entities
         /// <remarks> No-op if that clip is already playing, preventing looping animations from restarting each tick. </remarks>
         public void PlayAnimation(String animationName)
         {
-            bool alreadyPlaying = AnimationPlayer.CurrentAnimation == animationName
-                && AnimationPlayer.IsPlaying();
-
+            Boolean alreadyPlaying = Sprite.CurrentAnimation == animationName && Sprite.IsPlaying;
             if (!alreadyPlaying)
             {
-                AnimationPlayer.Play(animationName);
+                Sprite.PlayAnimation(animationName);
             }
         }
     }

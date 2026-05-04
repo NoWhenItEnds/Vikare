@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using Vikare.Entities;
+using Vikare.Entities.Components;
 using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
@@ -14,6 +15,8 @@ namespace Vikare.Managers
         public override void _Ready()
         {
             GD.Print("Hello, World!");
+
+            _player.TryAddComponent<AttributeComponent>();
             InputManager.Instance.RegisterPlayer(_player);
         }
     }
