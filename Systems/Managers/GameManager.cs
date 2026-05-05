@@ -3,6 +3,7 @@ using System;
 using Vikare.Entities;
 using Vikare.Entities.Components;
 using Vikare.Utilities.Singletons;
+using Logger = Vikare.Utilities.Logging.Logger;
 
 namespace Vikare.Managers
 {
@@ -14,7 +15,7 @@ namespace Vikare.Managers
         /// <inheritdoc/>
         public override void _Ready()
         {
-            GD.Print("Hello, World!");
+            Logger.Instance.Info("Hello, World!", Name);
 
             _player.TryAddComponent<AttributeComponent>();
             InputManager.Instance.RegisterPlayer(_player);

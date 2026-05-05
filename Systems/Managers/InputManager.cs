@@ -3,6 +3,7 @@ using Godot;
 using Vikare.Entities;
 using Vikare.Entities.Abilities;
 using Vikare.Utilities.Singletons;
+using Logger = Vikare.Utilities.Logging.Logger;
 
 namespace Vikare.Managers
 {
@@ -27,9 +28,7 @@ namespace Vikare.Managers
         {
             if (_player != null)
             {
-                GD.PushWarning(
-                    $"[InputManager] SetPlayer called whilst '{_player.Name}' is already registered. " +
-                    $"Overwriting with '{player.Name}'.");
+                Logger.Instance.Warn($"SetPlayer called whilst '{_player.Name}' is already registered. Overwriting with '{player.Name}'.", Name);
                 DeregisterPlayer();
             }
 

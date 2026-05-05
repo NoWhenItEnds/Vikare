@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Logger = Vikare.Utilities.Logging.Logger;
 
 namespace Vikare.Entities
 {
@@ -86,7 +87,7 @@ namespace Vikare.Entities
             }
             else
             {
-                GD.PushError($"LayeredSprite: animation '{qualifiedName}' not found.");
+                Logger.Instance.Error($"LayeredSprite: animation '{qualifiedName}' not found.", Name);
             }
         }
 
@@ -119,7 +120,7 @@ namespace Vikare.Entities
             }
             else
             {
-                GD.PushError($"LayeredSprite: part '{partName}' not found in SetPartTexture.");
+                Logger.Instance.Error($"LayeredSprite: part '{partName}' not found in SetPartTexture.", Name);
             }
         }
 
@@ -130,7 +131,6 @@ namespace Vikare.Entities
         /// </summary>
         /// <param name="partName"> The name of the part whose texture to retrieve. </param>
         /// <returns> The texture assigned to the part, or <c>null</c> if the part is not registered. </returns>
-        /// <remarks> An error is also logged via <c>GD.PushError</c> when the part is missing. </remarks>
         public Texture2D? GetPartTexture(String partName)
         {
             String key = NormaliseKey(partName);
@@ -142,7 +142,7 @@ namespace Vikare.Entities
             }
             else
             {
-                GD.PushError($"LayeredSprite: part '{partName}' not found in GetPartTexture.");
+                Logger.Instance.Error($"LayeredSprite: part '{partName}' not found in GetPartTexture.", Name);
             }
 
             return result;
@@ -164,7 +164,7 @@ namespace Vikare.Entities
             }
             else
             {
-                GD.PushError($"LayeredSprite: part '{partName}' not found in SetPartVisible.");
+                Logger.Instance.Error($"LayeredSprite: part '{partName}' not found in SetPartVisible.", Name);
             }
         }
 
@@ -207,7 +207,7 @@ namespace Vikare.Entities
             }
             else
             {
-                GD.PushError($"LayeredSprite: part '{partName}' not found in RemovePart.");
+                Logger.Instance.Error($"LayeredSprite: part '{partName}' not found in RemovePart.", Name);
             }
         }
 
