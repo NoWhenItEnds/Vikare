@@ -15,7 +15,7 @@ namespace Vikare.Utilities.Logging
         /// <returns> A formatted log string ready for output to any sink. </returns>
         public static String Format(LogLevel level, String source, String message)
         {
-            return $"[{level}] [{source}] {message}";
+            return $"[{level}] <{source}> {message}";
         }
     }
 }

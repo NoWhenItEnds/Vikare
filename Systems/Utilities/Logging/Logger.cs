@@ -17,6 +17,13 @@ namespace Vikare.Utilities.Logging
         private readonly List<ILogSink> _sinks = new List<ILogSink>();
 
 
+        /// <inheritdoc/>
+        public override void _Ready()
+        {
+            AddSink(new ConsoleLogSink());
+        }
+
+
         /// <summary> Registers a sink so it begins receiving all subsequent log entries. </summary>
         /// <param name="sink"> The sink to add; duplicates are silently ignored. </param>
         public void AddSink(ILogSink sink)
