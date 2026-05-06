@@ -27,7 +27,7 @@ namespace Vikare.Entities.States
             if (attributeComponent != null)
             {
                 // Average of strength + finesse.
-                _speedModifier = (attributeComponent.Strength + attributeComponent.Finesse) * 0.5f;
+                _speedModifier = (attributeComponent.Strength.CurrentValue + attributeComponent.Finesse.CurrentValue) * 0.5f;
             }
         }
 

@@ -14,6 +14,9 @@ namespace Vikare.Entities
         [ExportGroup("Nodes")]
         [Export] public StateMachine Machine { get; private set; } = null!;
 
+        /// <summary> The navigator node the agent uses to move through the world. </summary>
+        [Export] public NavigationAgent2D NavigationAgent { get; private set; } = null!;
+
 
         /// <summary> The current direction the actor is facing. </summary>
         public Vector2 Direction { get; private set; } = Vector2.Down;
