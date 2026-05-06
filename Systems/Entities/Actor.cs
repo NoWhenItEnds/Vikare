@@ -59,5 +59,12 @@ namespace Vikare.Entities
             }
             MoveAndSlide(); // End each frame with a slide.
         }
+
+
+        /// <inheritdoc/>
+        public override void PlayAnimation(String animationName, Vector2 direction)
+        {
+            Sprite.PlayAnimation<Actor>(Machine.Race, animationName, direction);
+        }
     }
 }

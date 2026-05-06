@@ -41,7 +41,7 @@ namespace Vikare.Entities.States
             if (intent is AbilityIntent abilityIntent)
             {
                 _currentAbility = abilityIntent.Ability;
-                actor.PlayAnimation("human", _currentAbility.AnimationName);
+                actor.PlayAnimation(_currentAbility.AnimationName, actor.Direction);
             }
         }
 

@@ -2,13 +2,10 @@
 
 [ext_resource type="Script" uid="uid://c718kcppwr7q5" path="res://Systems/Entities/Actor.cs" id="1_1nvag"]
 [ext_resource type="Script" uid="uid://7poweulbel25" path="res://Systems/Entities/States/Machines/HumanStateMachine.cs" id="2_jl7u3"]
-[ext_resource type="Texture2D" uid="uid://trlvcm1ui24x" path="res://icon.svg" id="3_5ieec"]
 [ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="4_g5nf1"]
-[ext_resource type="AnimationLibrary" uid="uid://cogv3qck18784" path="res://Content/Resources/AnimationLibraries/AnimationLibrary_Human.tres" id="5_h0nk2"]
+[ext_resource type="SpriteFrames" uid="uid://b4x3o0xjnrm2r" path="res://Content/Resources/SpriteFrames/actor_human_body_naked_idle.tres" id="5_h0nk2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jl7u3"]
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_vhr8m"]
 
 [node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")
@@ -22,16 +19,9 @@ shape = SubResource("RectangleShape2D_jl7u3")
 [node name="StateMachine" type="Node" parent="." unique_id=109314578]
 script = ExtResource("2_jl7u3")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1088658116]
-position = Vector2(-9.536743e-07, -9.536743e-07)
-scale = Vector2(0.14843753, 0.14843753)
-texture = ExtResource("3_5ieec")
-
-[node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555 node_paths=PackedStringArray("_animationPlayer")]
+[node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
 script = ExtResource("4_g5nf1")
-_animationPlayer = NodePath("AnimationPlayer")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="LayeredSprite" unique_id=839838539]
-root_node = NodePath("../..")
-libraries/ = SubResource("AnimationLibrary_vhr8m")
-libraries/human = ExtResource("5_h0nk2")
+[node name="body" type="AnimatedSprite2D" parent="LayeredSprite" unique_id=1946649169]
+sprite_frames = ExtResource("5_h0nk2")
+animation = &"left"

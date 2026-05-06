@@ -14,7 +14,7 @@ namespace Vikare.Entities.States
         public void Enter(Actor actor)
         {
             actor.Velocity = Vector2.Zero;
-            actor.PlayAnimation("human", AnimationName);
+            actor.PlayAnimation(AnimationName, actor.Direction);
         }
 
 

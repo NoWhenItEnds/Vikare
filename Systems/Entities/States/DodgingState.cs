@@ -37,8 +37,6 @@ namespace Vikare.Entities.States
                 // Average of strength + finesse.
                 _speedModifier = (attributeComponent.Strength + attributeComponent.Finesse) * 0.5f;
             }
-
-            actor.PlayAnimation("human", AnimationName);
         }
 
 
@@ -81,6 +79,7 @@ namespace Vikare.Entities.States
                     _dodgeDirection = dodgeIntent.Direction != Vector2.Zero ?
                         dodgeIntent.Direction.Normalized() :
                         -actor.Direction;
+                    actor.PlayAnimation(AnimationName, _dodgeDirection);
                 }
             }
         }

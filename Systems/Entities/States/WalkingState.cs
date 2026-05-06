@@ -30,8 +30,6 @@ namespace Vikare.Entities.States
                 // 10% of average of strength + finesse.
                 _speedModifier = 1f + (attributeComponent.Strength + attributeComponent.Finesse) * 0.05f;
             }
-
-            actor.PlayAnimation("human", AnimationName);
         }
 
 
@@ -60,6 +58,7 @@ namespace Vikare.Entities.States
             if (intent is WalkIntent walkIntent)
             {
                 _currentDirection = walkIntent.Direction;
+                actor.PlayAnimation(AnimationName, _currentDirection);
             }
         }
     }

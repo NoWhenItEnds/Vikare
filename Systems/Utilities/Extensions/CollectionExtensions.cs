@@ -19,5 +19,14 @@ namespace Vikare.Utilities.Extensions
             IList<T> list = source as IList<T> ?? source.ToList();
             return list.Count > 0 ? list[Random.Shared.Next(list.Count)] : default(T);
         }
+
+
+        /// <summary> Convert the useless array .ToString into something usable. </summary>
+        /// <param name="array"> The input array. </param>
+        /// <returns> A readable string of all the elements in an array. </returns>
+        public static String ToArrayString(this String[] array)
+        {
+            return $"[{string.Join(", ", array)}]";
+        }
     }
 }

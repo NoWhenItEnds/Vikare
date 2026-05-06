@@ -33,8 +33,8 @@ namespace Vikare.Entities.States
         }
 
 
-        /// <summary> The name of the animation library to use for this state machine. </summary>
-        public abstract String AnimationLibrary { get; }
+        /// <summary> The common name or kind of this state machine. Used to determine the actor's race. </summary>
+        public abstract String Race { get; }
 
 
         /// <summary> Registered transitions consulted in order on each <see cref="HandleIntent"/> call. </summary>

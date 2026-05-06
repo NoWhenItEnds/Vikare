@@ -7,7 +7,7 @@ namespace Vikare.Entities.States.Machines
     public partial class HumanStateMachine : StateMachine
     {
         /// <inheritdoc/>
-        public override String AnimationLibrary => "human";
+        public override String Race => "human";
 
 
         /// <inheritdoc/>

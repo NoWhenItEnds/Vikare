@@ -67,21 +67,9 @@ namespace Vikare.Entities
         public Boolean RemoveComponent(EntityComponent component) => _components.Remove(component);
 
 
-        /// <summary> Plays the named animation clip. </summary>
-        /// <param name="libraryName"> The name of the animation library to search for, or an empty string for the default library. </param>
-        /// <param name="animationName"> The name of the animation within the library to use. </param>
-        /// <remarks> No-op if that clip is already playing, preventing looping animations from restarting each tick. </remarks>
-        public void PlayAnimation(String libraryName, String animationName)
-        {
-            String qualifiedName = String.IsNullOrEmpty(libraryName)
-                ? animationName
-                : $"{libraryName}/{animationName}";
-
-            Boolean alreadyPlaying = Sprite.CurrentAnimation == qualifiedName && Sprite.IsPlaying;
-            if (!alreadyPlaying)
-            {
-                Sprite.PlayAnimation(libraryName, animationName);
-            }
-        }
+        /// <summary> Plays the named animation. </summary>
+        /// <param name="animationName"> The name of the animation to use. </param>
+        /// <param name="direction"> The direction to use for the animation. </param>
+        public abstract void PlayAnimation(String animationName, Vector2 direction);
     }
 }

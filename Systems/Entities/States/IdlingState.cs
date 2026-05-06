@@ -15,7 +15,7 @@ namespace Vikare.Entities.States
         {
             // Zeroes velocity and plays the idle animation.
             actor.Velocity = Vector2.Zero;
-            actor.PlayAnimation("human", AnimationName);
+            actor.PlayAnimation(AnimationName, actor.Direction);
         }
 
 
