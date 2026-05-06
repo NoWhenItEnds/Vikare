@@ -64,7 +64,8 @@ namespace Vikare.Entities
         /// <inheritdoc/>
         public override void PlayAnimation(String animationName, Vector2 direction)
         {
-            Sprite.PlayAnimation<Actor>(Machine.Race, animationName, direction);
+            Vector2 sanitisedDirection = direction != Vector2.Zero ? direction : Direction; // We don't want zero, so if the input is that, default to the player's current direction.
+            Sprite.PlayAnimation<Actor>(Machine.Race, animationName, sanitisedDirection);
         }
     }
 }

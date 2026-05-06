@@ -3,8 +3,13 @@
 [ext_resource type="Script" uid="uid://c718kcppwr7q5" path="res://Systems/Entities/Actor.cs" id="1_1nvag"]
 [ext_resource type="Script" uid="uid://7poweulbel25" path="res://Systems/Entities/States/Machines/HumanStateMachine.cs" id="2_jl7u3"]
 [ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="4_g5nf1"]
+[ext_resource type="SpriteFrames" uid="uid://b4x3o0xjnrm2r" path="res://Content/Resources/SpriteFrames/Actors/Human/actor_human_torso_naked_idle.tres" id="5_h0nk2"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_jl7u3"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_g5nf1"]
+radius = 8.0
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_g5nf1"]
+polygon = PackedVector2Array(0, -8, 4, -7, 7, -4, 8, 0, 7, 4, 4, 7, 0, 8, -4, 7, -7, 4, -8, 0, -7, -4, -4, -7)
 
 [node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")
@@ -12,11 +17,21 @@ Machine = NodePath("StateMachine")
 Collision = NodePath("CollisionShape2D")
 Sprite = NodePath("LayeredSprite")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
-shape = SubResource("RectangleShape2D_jl7u3")
-
 [node name="StateMachine" type="Node" parent="." unique_id=109314578]
 script = ExtResource("2_jl7u3")
 
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
+shape = SubResource("CircleShape2D_g5nf1")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=266458685]
+light_mask = 2
+occluder = SubResource("OccluderPolygon2D_g5nf1")
+occluder_light_mask = 2
+
 [node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
+position = Vector2(0, -16)
 script = ExtResource("4_g5nf1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="LayeredSprite" unique_id=2043842246]
+sprite_frames = ExtResource("5_h0nk2")
+animation = &"down"

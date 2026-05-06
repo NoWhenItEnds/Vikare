@@ -1,12 +1,23 @@
 [gd_scene format=3 uid="uid://4ij4w62tjtam"]
 
 [ext_resource type="Script" uid="uid://3rmj1ssyw0vy" path="res://Systems/Managers/GameManager.cs" id="1_k1v7w"]
+[ext_resource type="Texture2D" uid="uid://trlvcm1ui24x" path="res://icon.svg" id="2_3jj2t"]
 [ext_resource type="Script" uid="uid://bphlf57en6quv" path="res://Systems/Managers/InputManager.cs" id="2_33ift"]
 [ext_resource type="PackedScene" uid="uid://bwcux83rh4l5k" path="res://Content/Prefabs/Actor.tscn" id="3_hls3d"]
+
+[sub_resource type="Environment" id="Environment_hls3d"]
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_3jj2t"]
+
+[sub_resource type="Compositor" id="Compositor_mtcwf"]
 
 [node name="Game" type="Node" unique_id=1020175912 node_paths=PackedStringArray("_player")]
 script = ExtResource("1_k1v7w")
 _player = NodePath("Actor")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1296226888]
+position = Vector2(64, 64)
+texture = ExtResource("2_3jj2t")
 
 [node name="Managers" type="Node" parent="." unique_id=1973359207]
 
@@ -16,3 +27,16 @@ script = ExtResource("2_33ift")
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1033578679]
 
 [node name="Actor" parent="." unique_id=1644200139 instance=ExtResource("3_hls3d")]
+position = Vector2(62, 48)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=379933550]
+environment = SubResource("Environment_hls3d")
+camera_attributes = SubResource("CameraAttributesPractical_3jj2t")
+compositor = SubResource("Compositor_mtcwf")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="WorldEnvironment" unique_id=694956736]
+rotation = -3.1415927
+range_item_cull_mask = 2
+shadow_enabled = true
+shadow_color = Color(1, 0, 0, 1)
+shadow_item_cull_mask = 2
