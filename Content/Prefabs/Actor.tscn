@@ -24,7 +24,6 @@ script = ExtResource("2_jl7u3")
 shape = SubResource("CircleShape2D_g5nf1")
 
 [node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=266458685]
-light_mask = 2
 occluder = SubResource("OccluderPolygon2D_g5nf1")
 occluder_light_mask = 2
 

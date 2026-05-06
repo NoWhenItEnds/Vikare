@@ -36,7 +36,6 @@ compositor = SubResource("Compositor_mtcwf")
 
 [node name="DirectionalLight2D" type="DirectionalLight2D" parent="WorldEnvironment" unique_id=694956736]
 rotation = -3.1415927
-range_item_cull_mask = 2
 shadow_enabled = true
 shadow_color = Color(1, 0, 0, 1)
 shadow_item_cull_mask = 2
