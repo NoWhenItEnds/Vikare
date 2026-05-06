@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Vikare.Entities.Components;
+using Vikare.Types;
 
 namespace Vikare.Entities
 {

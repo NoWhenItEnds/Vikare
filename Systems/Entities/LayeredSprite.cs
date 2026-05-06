@@ -1,7 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Vikare.Types;
 using Vikare.Utilities.Extensions;
 using Logger = Vikare.Utilities.Logging.Logger;
 
@@ -24,9 +24,6 @@ namespace Vikare.Entities
         /// <summary> Whether an animation is currently playing. </summary>
         public Boolean IsPlaying { get; private set; } = false;
 
-        /// <summary> The name of the animation that is currently playing. An empty string means that there isn't one. </summary>
-        public String CurrentAnimation { get; private set; } = String.Empty;
-
 
         /// <summary> Lookup table of normalised part names to their <see cref="AnimatedSprite2D"/> nodes. </summary>
         private readonly Dictionary<String, AnimatedSprite2D> _parts = new Dictionary<String, AnimatedSprite2D>();
@@ -35,26 +32,32 @@ namespace Vikare.Entities
         /// <remarks> This map is shared across all instances of the LayeredSprite. </remarks>
         private static readonly Dictionary<String, SpriteFrames> SPRITE_FRAMES = ResourceExtensions.GetMappedResources<SpriteFrames>("res://Content/Resources/SpriteFrames");
 
+        private static readonly Dictionary<Direction, EntityPart[]> PART_ORDER = new Dictionary<Direction, EntityPart[]>()
+        {
+            //{Direction.Up, [EntityPartPosition.Back, EntityPartPosition.Legs, EntityPartPosition.Torso, EntityPartPosition.Head, EntityPartPosition.Hair]}
+        };
+
 
         /// <inheritdoc/>
         public override void _Ready()
         {
-            foreach (var frame in SPRITE_FRAMES)
-            {
-                GD.Print(frame.Key);
-            }
-            CacheParts();
+            BuildParts();
         }
 
 
-        /// <summary> Rebuilds <see cref="_parts"/> from every <see cref="AnimatedSprite2D"/> child currently in the scene tree. </summary>
-        private void CacheParts()
+        /// <summary> Constructs all the sub-animated sprites and caches them. </summary>
+        private void BuildParts()
         {
-            _parts.Clear();
-
-            foreach (AnimatedSprite2D sprite in GetChildren().OfType<AnimatedSprite2D>())
+            foreach (EntityPart part in Enum.GetValues(typeof(EntityPart)))
             {
-                _parts[sprite.Name.ToLower()] = sprite;
+                if (part != EntityPart.None)
+                {
+                    String partName = part.ToString();
+                    AnimatedSprite2D sprite = new AnimatedSprite2D();
+                    AddChild(sprite);
+                    sprite.Name = partName;
+                    _parts[partName.ToLower()] = sprite;
+                }
             }
         }
 
@@ -69,27 +72,25 @@ namespace Vikare.Entities
             String entityType = typeof(T).Name.ToLowerInvariant();
             foreach (KeyValuePair<String, AnimatedSprite2D> part in _parts)
             {
-                if (part.Key == "body") // TODO - Fix with mapping.
+                String key = String.Join('.', [entityType, entityRace.ToLowerInvariant(), part.Key, "naked", animationName]);   // TODO - Naked is default, uses clothing (or something) depending upon calling entity.
+                if (SPRITE_FRAMES.TryGetValue(key, out SpriteFrames? frames) && frames != null)
                 {
-                    String key = String.Join('.', [entityType, entityRace.ToLowerInvariant(), "body", "naked", animationName]);
-                    if(SPRITE_FRAMES.TryGetValue(key, out SpriteFrames? frames) && frames != null)
+                    String animationDirection = direction.ToDirection().ToString().ToLowerInvariant();
+                    if (frames.HasAnimation(animationDirection))
                     {
-                        String animationDirection = direction.ToDirection().ToString().ToLowerInvariant();
-                        if(frames.HasAnimation(animationDirection))
-                        {
-                            part.Value.SpriteFrames = frames;
-                            part.Value.Animation = animationDirection;
-                            part.Value.Play();
-                        }
-                        else
-                        {
-                            Logger.Instance.Warn($"{frames.ResourcePath} doesn't have an animation called {animationDirection}.", Name);
-                        }
+                        part.Value.SpriteFrames = frames;
+                        part.Value.Animation = animationDirection;
+                        part.Value.Play();
                     }
                     else
                     {
-                        Logger.Instance.Warn($"No animation found with the path '{key}'.", Name);
+                        Logger.Instance.Warn($"{frames.ResourcePath} doesn't have an animation called {animationDirection}.", Name);
                     }
+                }
+                else
+                {
+                    // We will just silently let it fall through if there isn't a SpriteFrame for the specific combination for a part.
+                    //Logger.Instance.Warn($"No animation found with the path '{key}'.", Name);
                 }
             }
 
@@ -108,32 +109,6 @@ namespace Vikare.Entities
 
             IsPlaying = false;
             EmitSignal(SignalName.AnimationFinished);
-        }
-
-
-        /// <summary> Returns whether a part with the given name has been registered. </summary>
-        /// <param name="partName"> The name of the part to check. </param>
-        /// <returns> <c>true</c> if the part exists; otherwise <c>false</c>. </returns>
-        public Boolean HasPart(String partName) => _parts.ContainsKey(partName.ToLowerInvariant());
-
-
-        /// <summary> Shows or hides the named part. </summary>
-        /// <param name="partName"> The name of the part to show or hide. </param>
-        /// <param name="isVisible"> <c>true</c> to show the part; <c>false</c> to hide it. </param>
-        /// <returns> Whether the texture was set or not. </returns>
-        public Boolean TrySetPartVisible(String partName, Boolean isVisible)
-        {
-            Boolean isSuccessful = false;
-            if (_parts.TryGetValue(partName.ToLowerInvariant(), out AnimatedSprite2D? sprite) && sprite != null)
-            {
-                sprite.Visible = isVisible;
-                isSuccessful = true;
-            }
-            else
-            {
-                Logger.Instance.Error($"LayeredSprite: part '{partName}' not found in SetPartVisible.", Name);
-            }
-            return isSuccessful;
         }
     }
 }

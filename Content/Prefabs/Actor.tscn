@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://c718kcppwr7q5" path="res://Systems/Entities/Actor.cs" id="1_1nvag"]
 [ext_resource type="Script" uid="uid://7poweulbel25" path="res://Systems/Entities/States/Machines/HumanStateMachine.cs" id="2_jl7u3"]
 [ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="4_g5nf1"]
-[ext_resource type="SpriteFrames" uid="uid://b4x3o0xjnrm2r" path="res://Content/Resources/SpriteFrames/actor_human_body_naked_idle.tres" id="5_h0nk2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jl7u3"]
 
@@ -21,7 +20,3 @@ script = ExtResource("2_jl7u3")
 
 [node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
 script = ExtResource("4_g5nf1")
-
-[node name="body" type="AnimatedSprite2D" parent="LayeredSprite" unique_id=1946649169]
-sprite_frames = ExtResource("5_h0nk2")
-animation = &"left"
