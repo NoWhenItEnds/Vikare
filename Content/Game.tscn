@@ -14,6 +14,9 @@ outlines = Array[PackedVector2Array]([PackedVector2Array(-261, -240, 230, -247, 
 script = ExtResource("1_k1v7w")
 _player = NodePath("Actor")
 
+[node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=605206136]
+navigation_polygon = SubResource("NavigationPolygon_3jj2t")
+
 [node name="Managers" type="Node" parent="." unique_id=1973359207]
 
 [node name="Input" type="Node" parent="Managers" unique_id=1286153919]
@@ -22,14 +25,11 @@ script = ExtResource("2_33ift")
 [node name="Actors" type="Node2D" parent="Managers" unique_id=1089238730]
 script = ExtResource("3_3jj2t")
 _actorPrefab = ExtResource("3_hls3d")
-_spawnCount = 50
-_spawnRadius = 400.0
+_spawnCount = 1000
+_spawnRadius = 10000.0
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1033578679]
 
 [node name="Actor" parent="." unique_id=1644200139 instance=ExtResource("3_hls3d")]
-
-[node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=605206136]
-navigation_polygon = SubResource("NavigationPolygon_3jj2t")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1781091268]

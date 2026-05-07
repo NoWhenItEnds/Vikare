@@ -62,14 +62,14 @@ namespace Vikare.Managers
         /// <param name="index"> Zero-based spawn index; drives position offset and need variation. </param>
         private void ConfigureActor(Actor actor, Int32 index)
         {
-            actor.Position = RandomOffset();
+            actor.Position = RandomOffset(_spawnRadius);
             actor.Name = $"Actor_{index:000}";
             AddChild(actor);
 
             NeedsComponent needs = AddComponents(actor);
             ApplyNeedPattern(needs, index);
 
-            ActorController controller = new ActorController(actor, true);
+            ActorController controller = new ActorController(actor, false);
             _controllers.Add(controller);
         }
 
@@ -135,26 +135,11 @@ namespace Vikare.Managers
         /// radius linearly — without it, actors cluster near the manager's position.
         /// </summary>
         /// <returns>A position vector relative to this node's origin.</returns>
-        private Vector2 RandomOffset()
+        private Vector2 RandomOffset(Single spawnRadius)
         {
             Single angle = (Single)(_random.NextDouble() * Math.PI * 2.0);
-            Single radius = (Single)(Math.Sqrt(_random.NextDouble()) * _spawnRadius);
+            Single radius = (Single)(Math.Sqrt(_random.NextDouble()) * spawnRadius);
             return new Vector2(MathF.Cos(angle) * radius, MathF.Sin(angle) * radius);
         }
     }
-
-
-    /*
-        Open or create a test scene (e.g. res://Content/Scenes/GoapTest.tscn or wherever).
-        Add a NavigationRegion2D, draw a navigation polygon, bake it. (Without baked navigation, actors selecting Wander will just stand still — the planner is still working, just WanderStrategy has no path.)
-        Add a Node2D, attach Systems/Diagnostics/GoapTestManager.cs.
-        Drag Content/Prefabs/Actor.tscn into the Actor Scene slot.
-        Run. Watch the Output panel for traces like:
-
-        Actor -> Calculating new plan...
-        Actor -> Goal: KeepEntertained with 1 actions in plan.
-        Actor -> Popped action: Wander.
-        Actor -> Action, Wander, complete.
-        Actor -> Plan complete!
-    */
 }
