@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Vikare.Entities.Components;
+using Vikare.Entities.GOAP.Advertisers;
 using Vikare.Entities.GOAP.Strategies;
 using Vikare.Utilities.Extensions;
 
@@ -18,45 +19,197 @@ namespace Vikare.Entities.GOAP
         public ActorGoal? CurrentGoal { get; private set; } = null;
 
         /// <summary> The current plan the actor is using to address its current goal. </summary>
+        /// <remarks> A non-null CurrentAction implies this is also non-null; code that clears one must clear the other to maintain that invariant. </remarks>
         public ActionPlan? CurrentPlan { get; private set; } = null;
 
         /// <summary> The current action the actor is in the process of doing. </summary>
+        /// <remarks> A non-null value implies CurrentPlan is also non-null. </remarks>
         public ActorAction? CurrentAction { get; private set; } = null;
 
         /// <summary> An ordered array of the previous goals the actor tried to accomplish. </summary>
         /// <remarks> [0] is the latest. [^1] is the oldest. </remarks>
         public ActorGoal[] PreviousGoals { get; private set; } = new ActorGoal[10];
 
-        /// <summary> The 'truths' the actor knows. The beliefs it has about the world state. </summary>
+        /// <summary> The truths the actor knows about the world — keyed by fact name. </summary>
         public readonly Dictionary<String, ActorFact> AvailableFacts = new Dictionary<String, ActorFact>();
 
-        /// <summary> The goals that the actor will seek to address. </summary>
+        /// <summary> The goals the actor will seek to address. </summary>
         public readonly HashSet<ActorGoal> AvailableGoals = new HashSet<ActorGoal>();
 
         /// <summary> The potential actions this actor has access to. </summary>
         public readonly HashSet<ActorAction> AvailableActions = new HashSet<ActorAction>();
 
-        /// <summary> The goals that the organisation has given the actor. </summary>
+        /// <summary> The goals assigned by the actor's organisation. </summary>
         public readonly HashSet<ActorGoal> OrganisationGoals = new HashSet<ActorGoal>();
 
 
-        /// <summary> A reference to the planner this controller will use. </summary>
+        /// <summary> Advertisers this actor knows about. </summary>
+        /// <remarks> Empty by default. Call <see cref="LearnAdvertiser"/> to populate from a sensor or other learning source. </remarks>
+        private readonly HashSet<ActionAdvertiser> _knownAdvertisers = new HashSet<ActionAdvertiser>();   // TODO - Implement.
+
+        /// <summary> The planner used to build action sequences. </summary>
         private readonly ActorPlanner _planner = new ActorPlanner();
+
+        /// <summary> When true, emits trace logs for plan and action transitions. </summary>
+        private Boolean _useLogging = false;
+
+        /// <summary>
+        /// The factor by which a candidate goal's utility must exceed the current goal's utility
+        /// to trigger an interrupt; prevents jitter when two goals have near-equal scores.
+        /// </summary>
+        private const Single _utilityInterruptMargin = 1.1f;    // TODO - Move to own class.
+
+        /// <summary>
+        /// Ceiling for drive-insistent utility functions; entertainment and hydration both scale
+        /// against this value so they compete on equal footing.
+        /// Formula: <c>MaxDriveUtility * (1f - need.Percent)</c>.
+        /// </summary>
+        private const Single MaxDriveUtility = 100f;
+
+        /// <summary>
+        /// Utility for the no-op fallback goal; zero ensures it is picked only when no other
+        /// goal is in scope.
+        /// </summary>
+        private const Single WatchPaintDryUtility = 0f;
 
 
         /// <summary> Uses a GOAP implementation to control an entity. The AI brain that controls a unit. </summary>
         /// <param name="actor"> The entity this controller is responsible for controlling. </param>
-        public ActorController(Actor actor)
+        /// <param name="useLogging"> Whether the controller should log it's processes. </param>
+        public ActorController(Actor actor, Boolean useLogging = false)
         {
             Actor = actor;
+            _useLogging = useLogging;
 
-            Dictionary<String, ActorFact> basicFacts = BuildBasicFacts();
-            ActorAction[] basicActions = BuildBasicActions();
-            ActorGoal[] basicGoals = BuildBasicGoals();
+            AvailableFacts = AvailableFacts.Add(BuildBasicFacts());
+            AvailableActions.UnionWith(BuildBasicActions());
+            AvailableGoals.UnionWith(BuildBasicGoals());
+        }
 
-            AvailableFacts = AvailableFacts.Add(basicFacts);
-            AvailableActions.UnionWith(basicActions);
-            AvailableGoals.UnionWith(basicGoals);
+
+        /// <summary> Forces a hard reset of the current plan so the next ProcessPlan call starts a fresh planning cycle. </summary>
+        public void ReevaluatePlan()
+        {
+            ClearCurrentPlanState();
+            ArchiveCurrentGoal();
+        }
+
+
+        /// <summary> Clears the current action and plan together, preserving the non-null invariant between them. </summary>
+        private void ClearCurrentPlanState()
+        {
+            CurrentAction = null;
+            CurrentPlan = null;
+        }
+
+
+        /// <summary> Processes the actor's plan for one tick. </summary>
+        /// <param name="delta"> Time elapsed since the previous tick, in seconds. </param>
+        public void ProcessPlan(Double delta)
+        {
+            if (CurrentAction == null)
+            {
+                if (_useLogging) { GD.Print($"{Actor.Name} -> Calculating new plan..."); }
+                CalculatePlan();
+
+                if (CurrentPlan != null && CurrentPlan.Actions.Count > 0)
+                {
+                    CurrentGoal = CurrentPlan.ActorGoal;
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Goal: {CurrentGoal.Name} with {CurrentPlan.Actions.Count} actions in plan."); }
+
+                    CurrentAction = CurrentPlan.Actions.Pop();
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Popped action: {CurrentAction.Name}."); }
+
+                    Boolean preconditionsMet = CurrentAction.Preconditions.All(precondition => precondition.Evaluate());
+
+                    if (preconditionsMet)
+                    {
+                        CurrentAction.Start();
+                    }
+                    else
+                    {
+                        if (_useLogging) { GD.Print($"{Actor.Name} -> Goal preconditions not met, clearing current action and goal."); }
+
+                        ClearCurrentPlanState();
+                        CurrentGoal = null;
+                    }
+                }
+            }
+
+            if (CurrentPlan != null && CurrentAction != null)
+            {
+                CurrentAction.Update(delta);
+
+                if (CurrentAction.IsComplete)
+                {
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Action, {CurrentAction.Name}, complete."); }
+
+                    CurrentAction.Stop();
+                    CurrentAction = null;
+
+                    if (CurrentPlan.Actions.Count == 0)
+                    {
+                        if (_useLogging) { GD.Print($"{Actor.Name} -> Plan complete!"); }
+
+                        ArchiveCurrentGoal();
+                    }
+                }
+            }
+        }
+
+
+        /// <summary> Attempts to calculate a new plan. When a goal is already active, only goals that exceed its utility by at least <see cref="_utilityInterruptMargin"/> are considered, preventing jitter. </summary>
+        private void CalculatePlan()
+        {
+            HashSet<ActorGoal> goalsToCheck;
+
+            if (CurrentGoal != null)
+            {
+                Single currentUtility = CurrentGoal.Utility();
+                goalsToCheck = new HashSet<ActorGoal>(AvailableGoals.Where(g => g.Utility() > currentUtility * _utilityInterruptMargin));
+            }
+            else
+            {
+                goalsToCheck = AvailableGoals;
+            }
+
+            HashSet<ActorAction> actions = BuildActionSetForPlanning();
+            ActionPlan? potentialPlan = _planner.BuildPlan(goalsToCheck, actions);
+
+            CurrentPlan = potentialPlan;
+        }
+
+
+        /// <summary> Builds the full action set for one planning round by unioning static actions with any actions advertised by world objects this actor knows about. </summary>
+        /// <returns> A new set containing all planning-eligible actions for this round. </returns>
+        private HashSet<ActorAction> BuildActionSetForPlanning()
+        {
+            HashSet<ActorAction> actions = new HashSet<ActorAction>(AvailableActions);
+
+            foreach (ActionAdvertiser advertiser in _knownAdvertisers)
+            {
+                foreach (ActorAction advertisedAction in advertiser.GetAdvertisedActions(this))
+                {
+                    actions.Add(advertisedAction);
+                }
+            }
+
+            return actions;
+        }
+
+
+        /// <summary> Moves the current goal to the front of <see cref="PreviousGoals"/> and clears it. </summary>
+        private void ArchiveCurrentGoal()
+        {
+            if (CurrentGoal != null)
+            {
+                ActorGoal[] newValues = new ActorGoal[10];
+                newValues[0] = CurrentGoal;
+                Array.Copy(PreviousGoals, 0, newValues, 1, PreviousGoals.Length - 1);
+                PreviousGoals = newValues;
+            }
+
+            CurrentGoal = null;
         }
 
 
@@ -64,20 +217,42 @@ namespace Vikare.Entities.GOAP
         /// <returns> A set containing the constructed facts. </returns>
         private Dictionary<String, ActorFact> BuildBasicFacts()
         {
-            FactFactory factory = new FactFactory(Actor);
+            Dictionary<String, ActorFact> facts = new Dictionary<String, ActorFact>();
 
-            factory.AddFact("nothing", () => false);  // Always has a belief, even if it never will successfully evaluate.
+            // Always has a belief, even if it never will successfully evaluate.
+            facts.Add("nothing", new ActorFact.Builder("nothing")
+                .WithCondition(() => false)
+                .Build());
 
             NeedsComponent? needsComponent = Actor.GetComponent<NeedsComponent>();
             if (needsComponent != null)
             {
-                factory.AddFact("is_fresh", () => needsComponent.Stamina.Percent >= 0.9f);
-                factory.AddFact("is_tired", () => needsComponent.Stamina.Percent < 0.5f);
-                factory.AddFact("is_entertained", () => needsComponent.Entertainment.Percent >= 0.9f);
-                factory.AddFact("is_bored", () => needsComponent.Entertainment.Percent < 0.5f);
+                facts.Add("is_fresh", new ActorFact.Builder("is_fresh")
+                    .WithCondition(() => needsComponent.Stamina.Percent >= 0.9f)
+                    .Build());
+
+                facts.Add("is_tired", new ActorFact.Builder("is_tired")
+                    .WithCondition(() => needsComponent.Stamina.Percent < 0.5f)
+                    .Build());
+
+                facts.Add("is_entertained", new ActorFact.Builder("is_entertained")
+                    .WithCondition(() => needsComponent.Entertainment.Percent >= 0.9f)
+                    .Build());
+
+                facts.Add("is_bored", new ActorFact.Builder("is_bored")
+                    .WithCondition(() => needsComponent.Entertainment.Percent < 0.5f)
+                    .Build());
+
+                facts.Add("is_hydrated", new ActorFact.Builder("is_hydrated")
+                    .WithCondition(() => needsComponent.Hydration.Percent >= 0.9f)
+                    .Build());
+
+                facts.Add("is_dehydrated", new ActorFact.Builder("is_dehydrated")
+                    .WithCondition(() => needsComponent.Hydration.Percent < 0.5f)
+                    .Build());
             }
 
-            return factory.Build();
+            return facts;
         }
 
 
@@ -87,14 +262,19 @@ namespace Vikare.Entities.GOAP
         {
             HashSet<ActorAction> actions = new HashSet<ActorAction>();
 
-            actions.Add(new ActorAction.Builder("Relax", new IdleStrategy(Actor, 5f))
-                .AddOutcome(AvailableFacts["nothing"])
+            ActorFact nothingFact = AvailableFacts["nothing"];
+
+            actions.Add(new ActorAction.Builder("Relax", new IdleStrategy(Actor, 1f))   // TODO - Based off something?
+                .AddOutcome(nothingFact)
                 .Build());
 
-            actions.Add(new ActorAction.Builder("Wander", new WanderStrategy(Actor))
-                .WithCost(() => 10f)    // TODO - Have calculated from actor personality.
-                .AddOutcome(AvailableFacts["is_entertained"])
-                .Build());
+            if (AvailableFacts.TryGetValue("is_entertained", out ActorFact? isEntertainedFact))
+            {
+                actions.Add(new ActorAction.Builder("Wander", new WanderStrategy(Actor))
+                    .WithCost(() => 1f) // TODO - Based on distance?
+                    .AddOutcome(isEntertainedFact)
+                    .Build());
+            }
 
             return actions.ToArray();
         }
@@ -107,118 +287,21 @@ namespace Vikare.Entities.GOAP
             HashSet<ActorGoal> goals = new HashSet<ActorGoal>();
 
             goals.Add(new ActorGoal.Builder("WatchPaintDry", GoalSource.BASIC)
-                .WithPriority(GoalPriority.NONE)
+                .WithUtility(WatchPaintDryUtility)
                 .WithDesiredOutcome(AvailableFacts["nothing"])
                 .Build());
 
             goals.Add(new ActorGoal.Builder("KeepEntertained", GoalSource.BASIC)
-                .WithPriority(GoalPriority.CRITICAL)
+                .WithUtility(MaxDriveUtility)
                 .WithDesiredOutcome(AvailableFacts["is_entertained"])
                 .Build());
 
+            goals.Add(new ActorGoal.Builder("StayHydrated", GoalSource.BASIC)
+                .WithUtility(MaxDriveUtility)
+                .WithDesiredOutcome(AvailableFacts["is_hydrated"])
+                .Build());
+
             return goals.ToArray();
-        }
-
-
-        /// <summary> Force a hard reset of the current plan. </summary>
-        public void ReevaluatePlan()
-        {
-            // Remove the current objective to force the planner to reevaluate.
-            CurrentAction = null;
-            ArchiveCurrentGoal();
-        }
-
-
-        /// <summary> Process the actor's plan. </summary>
-        /// <param name="delta"> The time since the previous 'frame' this method was called. </param>
-        public void ProcessPlan(Double delta)
-        {
-            // Update the plan and current action if there is one
-            if (CurrentAction == null)
-            {
-                GD.Print($"{Actor.Name} -> Calculating new plan...");
-                CalculatePlan();
-
-                if (CurrentPlan != null && CurrentPlan.Actions.Count > 0)
-                {
-                    CurrentGoal = CurrentPlan.ActorGoal;
-                    GD.Print($"{Actor.Name} -> Goal: {CurrentGoal.Name} with {CurrentPlan.Actions.Count} actions in plan.");
-
-                    CurrentAction = CurrentPlan.Actions.Pop();
-                    GD.Print($"{Actor.Name} -> Popped action: {CurrentAction.Name}.");
-
-                    // Verify all precondition effects are true
-                    if (CurrentAction.Preconditions.All(b => b.Evaluate()))
-                    {
-                        CurrentAction.Start();
-                    }
-                    else
-                    {
-                        GD.Print($"{Actor.Name} -> Goal preconditions not met, clearing current action and goal.");
-
-                        CurrentAction = null;
-                        CurrentGoal = null;
-                    }
-                }
-            }
-
-
-            // If we have a current action, execute it
-            if (CurrentPlan != null && CurrentAction != null)
-            {
-                CurrentAction.Update(delta);
-
-                if (CurrentAction.IsComplete)
-                {
-                    GD.Print($"{Actor.Name} -> Action, {CurrentAction.Name}, complete.");
-
-                    CurrentAction.Stop();
-                    CurrentAction = null;
-
-                    if (CurrentPlan.Actions.Count == 0)
-                    {
-                        GD.Print($"{Actor.Name} -> Plan complete!");
-
-                        ArchiveCurrentGoal();
-                    }
-                }
-            }
-        }
-
-
-        /// <summary> Attempt to calculate a new plan. </summary>
-        private void CalculatePlan()
-        {
-            GoalPriority priorityLevel = CurrentGoal != null ? CurrentGoal.Priority : GoalPriority.NONE;
-
-            HashSet<ActorGoal> goalsToCheck = AvailableGoals;
-
-            // If we have a current goal, we only want to check goals with higher priority.
-            if (CurrentGoal != null)
-            {
-                goalsToCheck = new HashSet<ActorGoal>(AvailableGoals.Where(g => g.Priority > priorityLevel));
-            }
-
-            ActionPlan? potentialPlan = _planner.BuildPlan(this, goalsToCheck, PreviousGoals[0]);
-            if (potentialPlan != null)
-            {
-                CurrentPlan = potentialPlan;
-            }
-        }
-
-
-        /// <summary> Adds the current goal to the array of previous goals. </summary>
-        private void ArchiveCurrentGoal()
-        {
-            if(CurrentGoal != null)
-            {
-                ActorGoal[] newValues = new ActorGoal[10];
-                newValues[0] = CurrentGoal;
-                Array.Copy(PreviousGoals, 0, newValues, 1, PreviousGoals.Length - 1);
-                PreviousGoals = newValues;
-            }
-
-            CurrentGoal = null;
         }
     }
 }

@@ -8,105 +8,130 @@ namespace Vikare.Entities.GOAP
     /// <remarks> https://www.youtube.com/watch?v=T_sBYgP7_2k </remarks>
     public class ActorPlanner
     {
-        /// <summary> Attempt to build a plan to address the actor's highest priority goal. </summary>
-        /// <param name="actor"> A reference to the actor for whom this plan is for. </param>
-        /// <param name="goals"> The goals to plan for. </param>
-        /// <param name="mostRecentGoal"> A reference to the most recent goal the actor attempted to address. </param>
-        /// <returns> The constructed plan. A null value means that we couldn't find one. </returns>
-        public ActionPlan? BuildPlan(ActorController actor, HashSet<ActorGoal> goals, ActorGoal? mostRecentGoal = null)
-        {
-            // Order goals by priority, descending
-            IOrderedEnumerable<ActorGoal> orderedGoals = goals
-                .Where(g => g.DesiredOutcomes.Any(f => !f.Evaluate()))  // Don't include goals who's outcomes are already complete.
-                .OrderByDescending(g => (Single)g.Priority);
+        /// <summary> Maximum recursion depth for plan search; guards against precondition cycles. </summary>
+        private const Int32 _maxPlanDepth = 32;
 
-            // Try to solve each goal in order
+
+        /// <summary> Attempts to build a plan for the actor's highest-utility unsatisfied goal. Iterates goals in descending utility order and runs a DFS through the action graph, returning the first satisfiable plan found. </summary>
+        /// <param name="goals"> The goals to plan for. </param>
+        /// <param name="actions"> The full action set available this planning round, including advertised actions. </param>
+        /// <returns> The constructed plan, or null if no satisfiable plan was found. </returns>
+        /// <remarks> A <see cref="PlanningState"/> snapshot is constructed once per call so every goal attempt and DFS branch sees a consistent world view. Goal utilities are re-evaluated live. </remarks>
+        public ActionPlan? BuildPlan(HashSet<ActorGoal> goals, HashSet<ActorAction> actions)
+        {
+            PlanningState state = new PlanningState();
+
+            IOrderedEnumerable<ActorGoal> orderedGoals = goals
+                .Where(g => !state.SatisfiedBy(g.DesiredOutcomes))
+                .OrderByDescending(g => g.Utility());
+
+            ActionPlan? result = null;
+
             foreach (ActorGoal goal in orderedGoals)
             {
-                GraphNode goalNode = new GraphNode(null, null, goal.DesiredOutcomes, 0);
-
-                // If we can find a path to the goal, return the plan
-                if (FindPath(goalNode, actor.AvailableActions))
+                if (result == null)
                 {
-                    // If the goalNode has no leaves and no action to perform try a different goal
-                    if (!goalNode.IsLeafDead)
-                    {
-                        Stack<ActorAction> actionStack = new Stack<ActorAction>();
-                        while (goalNode.Leaves.Count > 0)
-                        {
-                            GraphNode cheapestLeaf = goalNode.Leaves.OrderBy(leaf => leaf.Cost).First();
-                            goalNode = cheapestLeaf;
-                            if (cheapestLeaf.Action != null)
-                            {
-                                actionStack.Push(cheapestLeaf.Action);
-                            }
-                        }
+                    GraphNode goalNode = new GraphNode(null, null, goal.DesiredOutcomes, 0);
 
-                        return new ActionPlan(goal, actionStack, goalNode.Cost);
+                    List<GraphNode> terminals = new List<GraphNode>();
+                    FindPath(goalNode, actions, terminals, 0, state);
+
+                    if (terminals.Count > 0)
+                    {
+                        GraphNode cheapestTerminal = terminals.OrderBy(n => n.Cost).First();
+                        Stack<ActorAction> actionStack = ReconstructPath(cheapestTerminal);
+                        result = new ActionPlan(goal, actionStack, cheapestTerminal.Cost);
                     }
                 }
             }
 
-            return null;
+            return result;
         }
 
 
-        /// <summary> Continue tracing a path from the parent using the available actions. </summary>
-        /// <param name="parent"> A reference to the direction parent node we're pathing from. </param>
-        /// <param name="actions"> The set of actions we have access to at this step. </param>
-        /// <returns> Whether a path was successfully found at this level. </returns>
-        private Boolean FindPath(GraphNode parent, HashSet<ActorAction> actions)
+        /// <summary> Walks parent pointers from a terminal node up to the root, building the action stack in execution order (first action on top). </summary>
+        /// <param name="terminal"> The fully-satisfied leaf node to reconstruct from. </param>
+        /// <returns> A stack whose top element is the first action to execute. </returns>
+        private Stack<ActorAction> ReconstructPath(GraphNode terminal)
         {
-            // Order actions by cost, ascending
-            IOrderedEnumerable<ActorAction> orderedActions = actions.OrderBy(a => a.Cost());
+            Stack<ActorAction> actionStack = new Stack<ActorAction>();
+            GraphNode? current = terminal;
 
-            foreach (ActorAction action in orderedActions)
+            while (current != null && current.Action != null)
             {
-                HashSet<ActorFact> requiredFacts = parent.RequiredFacts;
+                actionStack.Push(current.Action);
+                current = current.Parent;
+            }
 
-                // Remove any facts that evaluate to true, there is no action to take. They're already done.
-                requiredFacts.RemoveWhere(f => f.Evaluate());
+            return actionStack;
+        }
 
-                // If there are no required facts to fulfill, we have a plan. No need to search further.
-                if (requiredFacts.Count == 0)
+
+        /// <summary> Performs a depth-first search from <paramref name="parent"/>, expanding actions whose outcomes address at least one pending required fact. Terminal nodes — those with no remaining unsatisfied requirements — are appended to <paramref name="terminals"/>. </summary>
+        /// <param name="parent"> The node to expand from. </param>
+        /// <param name="actions"> The full action set available this planning round. </param>
+        /// <param name="terminals"> Accumulated terminal nodes; caller picks the cheapest after the full DFS. </param>
+        /// <param name="depth"> Current recursion depth; bails out at <see cref="_maxPlanDepth"/>. </param>
+        /// <param name="state"> The world-state snapshot for this planning pass. </param>
+        /// <returns> True if at least one satisfiable branch was found beneath this node. </returns>
+        /// <remarks> The parent node's required set is never mutated. </remarks>
+        private Boolean FindPath(GraphNode parent, HashSet<ActorAction> actions, List<GraphNode> terminals, Int32 depth, PlanningState state)
+        {
+            Boolean pathFound;
+
+            if (depth >= _maxPlanDepth)
+            {
+                pathFound = false;
+            }
+            else
+            {
+                HashSet<ActorFact> pendingFacts = new HashSet<ActorFact>(
+                    parent.RequiredFacts.Where(f => !state.Get(f)));
+
+                if (pendingFacts.Count == 0)
                 {
-                    return true;
+                    terminals.Add(parent);
+                    pathFound = true;
                 }
-
-                // If this action addresses any of the required outcomes, it's worth exploring.
-                if (action.Outcomes.Any(requiredFacts.Contains))
+                else
                 {
-                    HashSet<ActorFact> newRequiredFacts = new HashSet<ActorFact>(requiredFacts);
-                    newRequiredFacts.ExceptWith(action.Outcomes); // Remove any that have already been satisfied.
-                    newRequiredFacts.UnionWith(action.Preconditions); // Add any preconditions that haven't been.
+                    IOrderedEnumerable<ActorAction> orderedActions = actions.OrderBy(a => a.Cost());
 
-                    GraphNode newNode = new GraphNode(parent, action, newRequiredFacts, parent.Cost + action.Cost());
+                    pathFound = false;
 
-                    // Explore the new node, recursively.
-                    if (FindPath(newNode, actions))
+                    foreach (ActorAction action in orderedActions)
                     {
-                        parent.Leaves.Add(newNode);
-                        if (newNode.Action != null)
+                        HashSet<ActorFact> satisfiedByAction = new HashSet<ActorFact>(
+                            pendingFacts.Where(f => action.Outcomes.Contains(f)));
+
+                        Boolean actionAddressesRequirement = satisfiedByAction.Count > 0;
+
+                        if (actionAddressesRequirement)
                         {
-                            newRequiredFacts.ExceptWith(newNode.Action.Preconditions);
+                            HashSet<ActorFact> newRequired = new HashSet<ActorFact>(pendingFacts);
+                            newRequired.ExceptWith(satisfiedByAction);
+                            newRequired.UnionWith(action.Preconditions);
+
+                            GraphNode newNode = new GraphNode(parent, action, newRequired, parent.Cost + action.Cost());
+
+                            Boolean branchFound = FindPath(newNode, actions, terminals, depth + 1, state);
+
+                            if (branchFound)
+                            {
+                                parent.Leaves.Add(newNode);
+                                pathFound = true;
+                            }
                         }
-
-                    }
-
-                    // If all effects at this depth have been satisfied, return true
-                    if (newRequiredFacts.Count == 0)
-                    {
-                        return true;
                     }
                 }
             }
 
-            return parent.Leaves.Count > 0;
+            return pathFound;
         }
     }
 
 
-    /// <summary> A data structure for holding a desired goal and the actions needed to reach the goal. </summary>
+    /// <summary> A goal paired with the ordered action sequence required to satisfy it. </summary>
     public class ActionPlan
     {
         /// <summary> The goal this plan is attempting to satisfy. </summary>
@@ -115,14 +140,14 @@ namespace Vikare.Entities.GOAP
         /// <summary> The ordered actions required to satisfy the goal. </summary>
         public Stack<ActorAction> Actions { get; }
 
-        /// <summary> The plan's total cost. A sum of all the actions' costs. </summary>
+        /// <summary> The sum of all action costs in the plan. </summary>
         public Single TotalCost { get; set; }
 
 
-        /// <summary> A data structure for holding a desired goal and the actions needed to reach the goal. </summary>
+        /// <summary> Creates a plan pairing a goal with its ordered action sequence and total cost. </summary>
         /// <param name="goal"> The goal this plan is attempting to satisfy. </param>
         /// <param name="actions"> The ordered actions required to satisfy the goal. </param>
-        /// <param name="totalCost"> The plan's total cost. A sum of all the actions' costs. </param>
+        /// <param name="totalCost"> The sum of all action costs in the plan. </param>
         public ActionPlan(ActorGoal goal, Stack<ActorAction> actions, Single totalCost)
         {
             ActorGoal = goal;
@@ -132,38 +157,39 @@ namespace Vikare.Entities.GOAP
     }
 
 
-    /// <summary> A node in a graph data structure. </summary>
+    /// <summary> A node in the backward-chaining planning graph. </summary>
     public class GraphNode
     {
-        /// <summary> A reference to this node's parent. </summary>
+        /// <summary> This node's parent in the planning graph. </summary>
         public GraphNode? Parent { get; }
 
         /// <summary> The action this node represents. </summary>
         public ActorAction? Action { get; }
 
-        /// <summary> All the facts at THIS position in the graph. </summary>
+        /// <summary> The facts still required to be true at this point in the graph. </summary>
+        /// <remarks> Visitors must copy before mutating — <c>FindPath</c> relies on the parent's set being untouched. </remarks>
         public HashSet<ActorFact> RequiredFacts { get; }
 
-        /// <summary> References to all the children leaves. </summary>
+        /// <summary> Child nodes for which a satisfiable subpath was confirmed. </summary>
         public List<GraphNode> Leaves { get; }
 
-        /// <summary> A running cost of how expensive the graph is at this point. </summary>
+        /// <summary> Accumulated cost from the root to this node. </summary>
         public Single Cost { get; }
 
-        /// <summary> A node isn't worth considering if it has no children and no associated action. </summary>
+        /// <summary> True when this node has no leaves and no action — a dead branch. </summary>
         public Boolean IsLeafDead => Leaves.Count == 0 && Action == null;
 
 
-        /// <summary> A node in a graph data structure. </summary>
-        /// <param name="parent"> A reference to this node's parent. </param>
+        /// <summary> Creates a graph node with a given parent, action, pending requirements, and accumulated cost. </summary>
+        /// <param name="parent"> This node's parent in the planning graph. </param>
         /// <param name="action"> The action this node represents. </param>
-        /// <param name="facts"> All the facts at THIS position in the graph. </param>
-        /// <param name="cost"> A running cost of how expensive the graph is at this point. </param>
-        public GraphNode(GraphNode? parent, ActorAction? action, HashSet<ActorFact> facts, Single cost)
+        /// <param name="requiredFacts"> The facts still to be satisfied at this position in the graph. </param>
+        /// <param name="cost"> Accumulated cost from the root to this node. </param>
+        public GraphNode(GraphNode? parent, ActorAction? action, HashSet<ActorFact> requiredFacts, Single cost)
         {
             Parent = parent;
             Action = action;
-            RequiredFacts = new HashSet<ActorFact>(facts);    // We make a new set as there may be additional facts we need to satisfy as a result of our path.
+            RequiredFacts = new HashSet<ActorFact>(requiredFacts);
             Leaves = new List<GraphNode>();
             Cost = cost;
         }

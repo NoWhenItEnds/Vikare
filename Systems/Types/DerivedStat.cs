@@ -50,8 +50,8 @@ namespace Vikare.Types
         /// <summary> Emitted when the value is changed. Contains the new current value for the statistic. </summary>
         public event Action<Int32> ValueChanged;
 
-        /// <summary> An amount, from 0.0 - 1.0 the statistic is between its min and max value. </summary>
-        public Single Percent => (CurrentValue - MinValue) / (MaxValue - MinValue);
+        /// <summary> Normalised value in <c>[0, 1]</c> representing how far <c>CurrentValue</c> sits between <c>MinValue</c> and <c>MaxValue</c>. </summary>
+        public Single Percent => (Single)(CurrentValue - MinValue) / (MaxValue - MinValue);
 
 
         /// <summary> A statistic whose values are based upon those of another. </summary>

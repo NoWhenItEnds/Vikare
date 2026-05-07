@@ -7,29 +7,29 @@ namespace Vikare.Entities.GOAP
     /// <summary> A potential action an entity can use to try to address a goal. </summary>
     public class ActorAction : IEquatable<ActorAction>
     {
-        /// <summary> The name or key identifying the action. </summary>
+        /// <summary> The identifying key used for equality, hashing, and planner deduplication. </summary>
         public String Name { get; }
 
-        /// <summary> The function to use for calculating the action's current cost (higher is obviously more costly). </summary>
+        /// <summary> Returns the action's current planning cost; higher means less preferred. </summary>
         public Func<Single> Cost { get; private set; } = () => 1f;
 
-        /// <summary> The facts or conditions that need to be true for the action to be actioned. </summary>
+        /// <summary> Facts that must evaluate true in the world state for this action to be eligible. </summary>
         public HashSet<ActorFact> Preconditions { get; } = new HashSet<ActorFact>();
 
-        /// <summary> How the actor's facts or state will change as a result of the action. </summary>
+        /// <summary> Facts the planner treats as true after this action completes; used for backward-chaining matching. </summary>
         public HashSet<ActorFact> Outcomes { get; } = new HashSet<ActorFact>();
 
-        /// <summary> Whether the action is now complete. </summary>
+        /// <summary> Whether the action's strategy has run to completion. </summary>
         public Boolean IsComplete => _strategy.IsComplete;
 
 
-        /// <summary> A reference to the strategy / logic used for this action. </summary>
+        /// <summary> The strategy that drives this action's execution. </summary>
         private readonly IActionStrategy _strategy;
 
 
-        /// <summary> A potential action an entity can use to try to address a goal. </summary>
-        /// <param name="name"> The name or key identifying the action. </param>
-        /// <param name="strategy"> A reference to the strategy / logic used for this action. </param>
+        /// <summary> Creates a named action backed by the given execution strategy. </summary>
+        /// <param name="name"> The identifying key for this action. </param>
+        /// <param name="strategy"> The strategy that drives execution. </param>
         private ActorAction(String name, IActionStrategy strategy)
         {
             Name = name;
@@ -37,31 +37,22 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Begin carrying out the action. </summary>
+        /// <summary> Starts the action's underlying strategy. </summary>
         public void Start() => _strategy.Start();
 
 
-        /// <summary> Update / incrementally run the current action. </summary>
-        /// <param name="delta"> The time since the last update frame. </param>
+        /// <summary> Advances the action's strategy by one tick; delegates entirely to the strategy. </summary>
+        /// <param name="delta"> Time elapsed since the last update, in seconds. </param>
         public void Update(Double delta)
         {
             if (_strategy.IsValid)
             {
                 _strategy.Update(delta);
             }
-
-            // Bail out if the strategy is still executing
-            if (!_strategy.IsComplete) { return; }
-
-            // Check to see if any outcomes have been met.
-            foreach (ActorFact outcome in Outcomes)
-            {
-                outcome.Evaluate();
-            }
         }
 
 
-        /// <summary> Stop or cancel the currently running action. Ensures this is done gracefully. </summary>
+        /// <summary> Stops or cancels the action's underlying strategy gracefully. </summary>
         public void Stop() => _strategy.Stop();
 
 
@@ -73,32 +64,32 @@ namespace Vikare.Entities.GOAP
         public override Boolean Equals(Object? obj)
         {
             ActorAction? other = obj as ActorAction;
-            return other != null ? Name.Equals(other.Name) : false;
+            return other != null && Name.Equals(other.Name, StringComparison.Ordinal);
         }
 
 
         /// <inheritdoc/>
-        public Boolean Equals(ActorAction? other) => other != null ? Name.Equals(other.Name) : false;
+        public Boolean Equals(ActorAction? other) => other != null && Name.Equals(other.Name, StringComparison.Ordinal);
 
 
-        /// <summary> A helpful builder that allows for easy construction of actor actions. </summary>
+        /// <summary> A builder for constructing actions before registration with the controller. </summary>
         public class Builder
         {
-            /// <summary> A reference to the action being constructed. </summary>
+            /// <summary> The action under construction. </summary>
             private readonly ActorAction _action;
 
 
-            /// <summary> A helpful builder that allows for easy construction of actor actions. </summary>
-            /// <param name="name"> The name or key identifying the action. </param>
-            /// <param name="strategy"> A reference to the strategy / logic used for this action. </param>
+            /// <summary> Creates a builder for an action with the given name and execution strategy. </summary>
+            /// <param name="name"> The identifying key for this action. </param>
+            /// <param name="strategy"> The strategy that drives execution. </param>
             public Builder(String name, IActionStrategy strategy)
             {
                 _action = new ActorAction(name, strategy);
             }
 
 
-            /// <summary> Sets the action cost using a function calculated at runtime. </summary>
-            /// <param name="cost"> The cost function to calculate how many 'action points' the action would cost to action. </param>
+            /// <summary> Sets a dynamic cost function evaluated during plan search. </summary>
+            /// <param name="cost"> Delegate returning the action's current cost. </param>
             public Builder WithCost(Func<Single> cost)
             {
                 _action.Cost = cost;
@@ -106,8 +97,8 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Sets the action cost as a static value. </summary>
-            /// <param name="cost"> How many 'action points' the action would cost to action. </param>
+            /// <summary> Sets a fixed planning cost. </summary>
+            /// <param name="cost"> The constant cost assigned to this action. </param>
             public Builder WithCost(Single cost)
             {
                 _action.Cost = () => cost;
@@ -115,9 +106,9 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Sets the action cost as a result of the distance between the actor and another entity. </summary>
+            /// <summary> Sets cost as the Euclidean distance between two entities, evaluated at planning time. </summary>
             /// <param name="actor"> The actor performing the action. </param>
-            /// <param name="other"> The entity to check. </param>
+            /// <param name="other"> The entity to measure distance to. </param>
             public Builder WithDistanceCost(Actor actor, Entity other)
             {
                 _action.Cost = () => actor.GlobalPosition.DistanceTo(other.GlobalPosition);
@@ -125,8 +116,8 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Adds a precondition to the action that must be true for the action to begin. </summary>
-            /// <param name="precondition"> The facts or conditions that need to be true for the action to be actioned. </param>
+            /// <summary> Adds a fact that must evaluate true for this action to be eligible. </summary>
+            /// <param name="precondition"> The fact that must hold before this action may be taken. </param>
             public Builder AddPrecondition(ActorFact precondition)
             {
                 _action.Preconditions.Add(precondition);
@@ -134,20 +125,21 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Adds preconditions to the action that must be true for the action to begin. </summary>
-            /// <param name="preconditions"> The facts or conditions that need to be true for the action to be actioned. </param>
+            /// <summary> Adds multiple facts that must all evaluate true for this action to be eligible. </summary>
+            /// <param name="preconditions"> The facts that must all hold before this action may be taken. </param>
             public Builder AddPrecondition(ActorFact[] preconditions)
             {
                 foreach (ActorFact precondition in preconditions)
                 {
                     _action.Preconditions.Add(precondition);
                 }
+
                 return this;
             }
 
 
-            /// <summary> Adds a outcome that is fulfilled by the action being completed. </summary>
-            /// <param name="outcome"> How the actor's facts or state will change as a result of the action. </param>
+            /// <summary> Declares a fact the planner treats as true after this action completes. </summary>
+            /// <param name="outcome"> The fact the planner uses to match this action against pending requirements. </param>
             public Builder AddOutcome(ActorFact outcome)
             {
                 _action.Outcomes.Add(outcome);
@@ -155,20 +147,21 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Adds outcomes that is fulfilled by the action being completed. </summary>
-            /// <param name="outcomes"> How the actor's facts or state will change as a result of the action. </param>
+            /// <summary> Declares multiple facts the planner treats as true after this action completes. </summary>
+            /// <param name="outcomes"> The facts used to match this action against pending requirements. </param>
             public Builder AddOutcome(ActorFact[] outcomes)
             {
                 foreach (ActorFact outcome in outcomes)
                 {
                     _action.Outcomes.Add(outcome);
                 }
+
                 return this;
             }
 
 
-            /// <summary> Build the architected action. </summary>
-            /// <returns> The newly constructed action. </returns>
+            /// <summary> Returns the configured action. </summary>
+            /// <returns> The newly constructed action, ready for registration. </returns>
             public ActorAction Build()
             {
                 return _action;

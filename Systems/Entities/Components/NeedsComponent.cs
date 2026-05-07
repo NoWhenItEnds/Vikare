@@ -9,5 +9,7 @@ namespace Vikare.Entities.Components
         public DerivedStat Stamina { get; set; } = new DerivedStat(() => 0, () => 10);
 
         public DerivedStat Entertainment { get; set; } = new DerivedStat(() => 0, () => 10);
+
+        public DerivedStat Hydration { get; set; } = new DerivedStat(() => 0, () => 10);
     }
 }

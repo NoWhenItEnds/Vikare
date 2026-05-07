@@ -1,88 +1,38 @@
 using System;
-using System.Collections.Generic;
 
 namespace Vikare.Entities.GOAP
 {
-    /// <summary> Construct facts on an industrial scale. </summary>
-    public class FactFactory
-    {
-        /// <summary> A reference to the being who the facts are associated with. </summary>
-        private readonly Actor _actor;
-
-        /// <summary> The array of current facts. </summary>
-        private readonly Dictionary<String, ActorFact> _facts = new Dictionary<String, ActorFact>();
-
-
-        /// <summary> Construct facts on an industrial scale. </summary>
-        /// <param name="actor"> A reference to the being who the facts are associated with. </param>
-        public FactFactory(Actor actor)
-        {
-            _actor = actor;
-        }
-
-
-        /// <summary> Adds a new fact with a simple boolean conditional. </summary>
-        /// <param name="key"> The name of fact. </param>
-        /// <param name="condition"> The function the fact uses to evaluate the nature of the condition. </param>
-        public void AddFact(String key, Func<Boolean> condition)
-        {
-            _facts.Add(key, new ActorFact.Builder(key)
-                .WithCondition(condition)
-                .Build());
-        }
-
-
-        /// <summary> Add a new positional fact that requires the actor to be in range of an entity. </summary>
-        /// <param name="key"> The name of fact. </param>
-        /// <param name="distance"> The acceptable distance or range from the location. </param>
-        /// <param name="other"> The other entity. </param>
-        public void AddPositionFact(String key, Single distance, Entity other)
-        {
-            _facts.Add(key, new ActorFact.Builder(key)
-                .WithCondition(() => InRangeOf(other, distance))
-                .Build());
-        }
-
-
-        public Dictionary<String, ActorFact> Build() => new Dictionary<String, ActorFact>(_facts);
-
-
-        /// <summary> Checks whether the other entity is within range of this actor. </summary>
-        /// <param name="other"> The other target entity. </param>
-        /// <param name="range"> The acceptable range. </param>
-        /// <returns> If the actor is within acceptable range of the given entity. </returns>
-        private Boolean InRangeOf(Entity other, Single range) => _actor.GlobalPosition.DistanceTo(other.GlobalPosition) < range;
-    }
-
-
-    /// <summary> A piece of knowledge the actor has about the world. </summary>
+    /// <summary> A named boolean condition about the world, evaluated lazily at planning time. </summary>
     public class ActorFact : IEquatable<ActorFact>
     {
-        /// <summary> The identifying name or key of the fact. </summary>
+        /// <summary> The identifying key used for equality, hashing, and dictionary lookup. </summary>
         public String Name { get; private set; }
 
-        /// <summary> The functions the fact uses to evaluate the nature of the condition. </summary>
-        private List<Func<Boolean>> _conditions = new List<Func<Boolean>>();
+        /// <summary> The delegate that determines the fact's current truth value. </summary>
+        private Func<Boolean>? _evaluator;
 
 
-        /// <summary> The identifying name or key of the fact. </summary>
-        /// <param name="name"> The identifying name or key of the fact. </param>
+        /// <summary> Creates a named fact with no evaluator set. </summary>
+        /// <param name="name"> The identifying key for this fact. </param>
         private ActorFact(String name)
         {
             Name = name;
         }
 
 
-        /// <summary> Calculate the condition to find out if the fact is true. </summary>
-        /// <returns> Evaluates the fact to see if it is true or not. </returns>
+        /// <summary> Invokes the configured evaluator and returns the current truth value. </summary>
+        /// <returns> The evaluator's result, or false if no evaluator is configured. </returns>
         public Boolean Evaluate()
         {
-            Boolean result = false;
+            Boolean result;
 
-            foreach (Func<Boolean> condition in _conditions)
+            if (_evaluator == null)
             {
-                result = condition();
-                if (!result) { break; }
+                result = false;
+            }
+            else
+            {
+                result = _evaluator();
             }
 
             return result;
@@ -97,40 +47,40 @@ namespace Vikare.Entities.GOAP
         public override Boolean Equals(Object? obj)
         {
             ActorFact? other = obj as ActorFact;
-            return other != null ? Name.Equals(other.Name) : false;
+            return other != null && Name.Equals(other.Name, StringComparison.Ordinal);
         }
 
 
         /// <inheritdoc/>
-        public bool Equals(ActorFact? other) => other != null ? Name.Equals(other.Name) : false;
+        public Boolean Equals(ActorFact? other) => other != null && Name.Equals(other.Name, StringComparison.Ordinal);
 
 
-        /// <summary> A builder for creating and modifying facts. </summary>
+        /// <summary> A builder for constructing facts before registration with the controller. </summary>
         public class Builder
         {
-            /// <summary> The fact the builder is associated with. </summary>
+            /// <summary> The fact under construction. </summary>
             private readonly ActorFact _fact;
 
 
-            /// <summary> A builder for creating and modifying facts. </summary>
-            /// <param name="name"> The identifying name or key of the fact. </param>
+            /// <summary> Creates a builder for a fact with the given name. </summary>
+            /// <param name="name"> The identifying key for the fact. </param>
             public Builder(String name)
             {
                 _fact = new ActorFact(name);
             }
 
 
-            /// <summary> Add a condition to the fact. </summary>
-            /// <param name="condition"> The delegate used to evaluate the condition. </param>
-            public Builder WithCondition(Func<Boolean> condition)
+            /// <summary> Sets the evaluator delegate; replaces any previously set evaluator. </summary>
+            /// <param name="evaluator"> The delegate invoked at planning time to determine truth. </param>
+            public Builder WithCondition(Func<Boolean> evaluator)
             {
-                _fact._conditions.Add(condition);
+                _fact._evaluator = evaluator;
                 return this;
             }
 
 
-            /// <summary> Build the architected fact. </summary>
-            /// <returns> The newly constructed fact. </returns>
+            /// <summary> Returns the configured fact. </summary>
+            /// <returns> The newly constructed fact, ready for registration. </returns>
             public ActorFact Build()
             {
                 return _fact;

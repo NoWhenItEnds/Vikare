@@ -24,24 +24,25 @@ namespace Vikare.Entities
 
         /// <summary> Try to add a new component of the given type. </summary>
         /// <typeparam name="T"> The type of component to add. </typeparam>
-        /// <returns> A reference to the newly created component. </returns>
+        /// <returns> A reference to the newly created component, or null if a component of that type already exists. </returns>
         public T? TryAddComponent<T>() where T : EntityComponent, new()
         {
             T component = new T();
-            Boolean result = _components.Add(component);
-            return result ? component : null;
+            Boolean added = _components.Add(component);
+            return added ? component : null;
         }
 
 
         /// <summary> Try to add the instance of a component to the entity. </summary>
         /// <param name="component"> The component being added. </param>
         /// <returns> Whether the component was successfully added. </returns>
+        /// <remarks> A deep copy of <paramref name="component"/> is stored — the original is not retained. </remarks>
         public Boolean TryAddComponent(EntityComponent component)
         {
             Boolean result = false;
 
             EntityComponent? newComponent = component.DuplicateDeep() as EntityComponent;
-            if(newComponent != null)
+            if (newComponent != null)
             {
                 result = _components.Add(newComponent);
             }
