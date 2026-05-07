@@ -14,14 +14,16 @@ NavigationAgent = NodePath("NavigationAgent2D")
 Collision = NodePath("CollisionShape2D")
 Sprite = NodePath("LayeredSprite")
 
+[node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
+position = Vector2(0, -16)
+script = ExtResource("4_g5nf1")
+
 [node name="StateMachine" type="Node" parent="." unique_id=109314578]
 script = ExtResource("2_jl7u3")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1532951239]
+avoidance_enabled = true
+debug_enabled = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
 shape = SubResource("CircleShape2D_g5nf1")
-
-[node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
-position = Vector2(0, -16)
-script = ExtResource("4_g5nf1")

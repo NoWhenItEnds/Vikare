@@ -31,7 +31,7 @@ namespace Vikare.Entities.GOAP.Strategies
             // For some reason, we can't use the map directly, so we use it to get the regions instead, which we can use.
             // TODO - Might be able to manually set the navigation map with a region manager (https://docs.godotengine.org/en/latest/tutorials/navigation/navigation_using_navigationmaps.html).
             Rid navigationMap = _actor.GetWorld2D().NavigationMap;
-            Array<Rid> regions = NavigationServer3D.MapGetRegions(navigationMap);
+            Array<Rid> regions = NavigationServer2D.MapGetRegions(navigationMap);
             if (regions.Count > 0)
             {
                 Vector2 location = NavigationServer2D.RegionGetRandomPoint(regions[0], 0, true);    // TODO - Else will need random here.
@@ -44,7 +44,8 @@ namespace Vikare.Entities.GOAP.Strategies
         public void Update(Double delta)
         {
             Vector2 nextPosition = _actor.NavigationAgent.GetNextPathPosition();
-            WalkIntent intent = new WalkIntent(nextPosition.Normalized());
+            Vector2 direction = _actor.GlobalPosition.DirectionTo(nextPosition);
+            WalkIntent intent = new WalkIntent(direction);
             _actor.Machine.HandleIntent(intent);
         }
 

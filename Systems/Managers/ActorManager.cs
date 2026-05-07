@@ -63,6 +63,7 @@ namespace Vikare.Managers
         private void ConfigureActor(Actor actor, Int32 index)
         {
             actor.Position = RandomOffset();
+            actor.Name = $"Actor_{index:000}";
             AddChild(actor);
 
             NeedsComponent needs = AddComponents(actor);

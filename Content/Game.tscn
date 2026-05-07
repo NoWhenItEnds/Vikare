@@ -6,9 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://bwcux83rh4l5k" path="res://Content/Prefabs/Actor.tscn" id="3_hls3d"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_3jj2t"]
-vertices = PackedVector2Array(303.64844, -280.03906, 416.77344, 338.72656, -330.9922, 264.14063, -219.82813, -282.95313)
+vertices = PackedVector2Array(240.5625, 242.71094, -262.7422, 229.25781, -251.24219, -230.13281, 220.40625, -236.85938)
 polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
-outlines = Array[PackedVector2Array]([PackedVector2Array(-228, -293, 312, -290, 429, 350, -343, 273)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(-261, -240, 230, -247, 251, 253, -273, 239)])
 
 [node name="Game" type="Node" unique_id=1020175912 node_paths=PackedStringArray("_player")]
 script = ExtResource("1_k1v7w")
@@ -22,7 +22,8 @@ script = ExtResource("2_33ift")
 [node name="Actors" type="Node2D" parent="Managers" unique_id=1089238730]
 script = ExtResource("3_3jj2t")
 _actorPrefab = ExtResource("3_hls3d")
-_spawnCount = 100
+_spawnCount = 50
+_spawnRadius = 400.0
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1033578679]
 
@@ -30,3 +31,5 @@ _spawnCount = 100
 
 [node name="NavigationRegion2D" type="NavigationRegion2D" parent="." unique_id=605206136]
 navigation_polygon = SubResource("NavigationPolygon_3jj2t")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1781091268]
