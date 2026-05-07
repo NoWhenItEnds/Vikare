@@ -22,7 +22,13 @@ script = ExtResource("4_g5nf1")
 script = ExtResource("2_jl7u3")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1532951239]
+path_desired_distance = 8.0
+target_desired_distance = 8.0
+path_max_distance = 128.0
+path_postprocessing = 1
 avoidance_enabled = true
+radius = 16.0
+neighbor_distance = 512.0
 debug_enabled = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
