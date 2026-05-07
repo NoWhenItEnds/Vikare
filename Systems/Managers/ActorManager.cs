@@ -115,7 +115,9 @@ namespace Vikare.Managers
         private void ApplyNeedPattern(NeedsComponent needs, Int32 index)
         {
             Int32 pattern = index % 3;
+            needs.Entertainment.CurrentValue = 1;
 
+            /*
             if (pattern == 0)
             {
                 // Entertainment critically low; Stamina and Hydration remain at max (10).
@@ -125,7 +127,7 @@ namespace Vikare.Managers
             {
                 // Hydration critically low; Stamina and Entertainment remain at max (10).
                 needs.Hydration.CurrentValue = 1;
-            }
+            }*/
             // Pattern 2: all stats default to max — no action required.
         }
 
