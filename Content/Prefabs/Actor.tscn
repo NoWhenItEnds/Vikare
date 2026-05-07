@@ -7,14 +7,17 @@
 [sub_resource type="CircleShape2D" id="CircleShape2D_g5nf1"]
 radius = 8.0
 
-[node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "Collision", "Sprite")]
+[node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "NavigationAgent", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")
 Machine = NodePath("StateMachine")
+NavigationAgent = NodePath("NavigationAgent2D")
 Collision = NodePath("CollisionShape2D")
 Sprite = NodePath("LayeredSprite")
 
 [node name="StateMachine" type="Node" parent="." unique_id=109314578]
 script = ExtResource("2_jl7u3")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=1532951239]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
 shape = SubResource("CircleShape2D_g5nf1")
