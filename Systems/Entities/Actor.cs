@@ -18,6 +18,18 @@ namespace Vikare.Entities
         [Export] public NavigationAgent2D NavigationAgent { get; private set; } = null!;
 
 
+        /// <summary> Whether the entity is being controlled by the player, or an AI controller. </summary>
+        [ExportGroup("Settings")]
+        [Export] public Boolean IsPlayerControlled
+        {
+            get => _isPlayerControlled;
+            set
+            {
+                _isPlayerControlled = value;
+            }
+        }
+
+
         /// <summary> The current direction the actor is facing. </summary>
         public Vector2 Direction { get; private set; } = Vector2.Down;
 
@@ -25,9 +37,21 @@ namespace Vikare.Entities
         /// <remarks> The actual <see cref="CharacterBody2D.Velocity"/> is written in <see cref="OnVelocityComputed"/>. </remarks>
         public Vector2 DesiredVelocity
         {
-            set => NavigationAgent.Velocity = value;
+            set
+            {
+                if(_isPlayerControlled)
+                {
+                    Velocity = value;
+                }
+                else
+                {
+                    NavigationAgent.Velocity = value;
+                }
+            }
         }
 
+        /// <summary> Whether the entity is being controlled by the player, or an AI controller. </summary>
+        private Boolean _isPlayerControlled = false;
 
         /// <summary> The abilities currently possessed by the actor. </summary>
         private HashSet<AbilityEffect> _abilities = new HashSet<AbilityEffect>();
@@ -76,15 +100,26 @@ namespace Vikare.Entities
         /// <param name="safeVelocity">The obstacle-avoiding velocity computed by <see cref="NavigationAgent"/>.</param>
         private void OnVelocityComputed(Vector2 safeVelocity)
         {
-            Velocity = safeVelocity;
+            if (!IsPlayerControlled)
+            {
+                Velocity = safeVelocity;
+            }
+        }
+
+
+        /// <inheritdoc/>
+        public override void _PhysicsProcess(Double delta)
+        {
+            base._PhysicsProcess(delta);
 
             if (Velocity != Vector2.Zero)
             {
                 Direction = Velocity.Normalized();  // Set the direction the actor is currently facing.
             }
 
-            MoveAndSlide();
+            MoveAndSlide(); // End each frame with a slide.
         }
+
 
 
         /// <inheritdoc/>

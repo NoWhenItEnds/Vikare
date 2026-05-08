@@ -24,11 +24,12 @@ namespace Vikare.Managers
         /// <inheritdoc/>
         public override void _Ready()
         {
-            Logger.LogInformation("[{Node}] Hello, World!", Name);
+            Logger.LogInformation("Hello, World!");
 
             _player.TryAddComponent<AttributeComponent>();
             _player.TryAddComponent<NeedsComponent>();
             _player.TryAddComponent<MemoryComponent>();
+            _player.IsPlayerControlled = true;
             InputManager.Instance.RegisterPlayer(_player);
         }
 
