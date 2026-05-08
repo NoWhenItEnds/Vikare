@@ -4,6 +4,7 @@ using Godot;
 using Vikare.Entities;
 using Vikare.Entities.Components;
 using Vikare.Entities.GOAP;
+using Vikare.Utilities.Extensions;
 using Vikare.Utilities.Singletons;
 
 namespace Vikare.Managers
@@ -11,140 +12,71 @@ namespace Vikare.Managers
     /// <summary> The game-world manager for all actors and their controllers. </summary>
     public partial class ActorManager : SingletonNode2D<ActorManager>
     {
-        /// <summary> The actor's prefab.</summary>
+        /// <summary> The actor's prefab. </summary>
+        [ExportGroup("Resources")]
         [Export] private PackedScene _actorPrefab = null!;
 
+
         /// <summary> Total number of actors to spawn. </summary>
+        [ExportGroup("Settings")]
         [Export] private Int32 _spawnCount = 3;
 
         /// <summary> Radius in pixels around this node's <c>GlobalPosition</c> within which actors are placed. </summary>
         [Export] private Single _spawnRadius = 200f;
 
-        /// <summary> Controllers for each successfully spawned actor. </summary>
-        private readonly List<ActorController> _controllers = new List<ActorController>();
 
-        /// <summary> Shared random instance; hoisted to avoid repeated allocation and the historical tight-loop seeding pitfall. </summary>
-        private readonly Random _random = new Random();
+        /// <summary> A map between actors and their linked controllers. </summary>
+        public readonly Dictionary<Actor, ActorController?> _actors = new Dictionary<Actor, ActorController?>();
 
 
         /// <inheritdoc/>
         public override void _Ready()
         {
-            SpawnActors();
+            for (Int32 i = 0; i < _spawnCount; i++)
+            {
+                Vector2 position = GlobalPosition.RandomOffset(_spawnRadius);
+                Actor actor = SpawnActor(position);
+                ActorController controller = new ActorController(actor, false);
+                _actors.Add(actor, controller);
+            }
         }
 
 
         /// <inheritdoc/>
         public override void _PhysicsProcess(Double delta)
         {
-            foreach (ActorController controller in _controllers)
+            foreach (ActorController? controller in _actors.Values)
             {
-                controller.ProcessPlan(delta);
-            }
-        }
-
-
-        /// <summary>Instantiates and configures all actors; invalid instantiations are skipped with an error log.</summary>
-        private void SpawnActors()
-        {
-            for (Int32 i = 0; i < _spawnCount; i++)
-            {
-                Actor? actor = _actorPrefab.InstantiateOrNull<Actor>();
-                if (actor != null)
+                if(controller != null)
                 {
-                    ConfigureActor(actor, i);
+                    controller.ProcessPlan(delta);
                 }
             }
         }
 
-        /// <summary> Constructs a new actor. </summary>
-        /// <param name="actor"> The freshly instantiated actor to configure. </param>
-        /// <param name="index"> Zero-based spawn index; drives position offset and need variation. </param>
-        private void ConfigureActor(Actor actor, Int32 index)
+
+        /// <summary> Create a new actor entity. </summary>
+        /// <param name="position"> The position to spawn the entity. </param>
+        /// <returns> The newly created entity. </returns>
+        /// <exception cref="ArgumentNullException"/>
+        private Actor SpawnActor(Vector2 position)
         {
-            actor.Position = RandomOffset(_spawnRadius);
-            actor.Name = $"Actor_{index:000}";
+            Actor actor = _actorPrefab.InstantiateOrNull<Actor>() ?? throw new ArgumentNullException("Unable to convert the Actor prefab into its own class.");
+            actor.GlobalPosition = position;
             AddChild(actor);
 
-            NeedsComponent needs = AddComponents(actor);
-            ApplyNeedPattern(needs, index);
+            AttributeComponent? attributes = actor.TryAddComponent<AttributeComponent>();
+            NeedsComponent? needs = actor.TryAddComponent<NeedsComponent>();
+            StatusComponent? status = actor.TryAddComponent<StatusComponent>();
+            NameComponent name = NameComponent.Random();
+            actor.TryAddComponent(name);
+            MemoryComponent? memory = actor.TryAddComponent<MemoryComponent>();
 
-            ActorController controller = new ActorController(actor, false);
-            _controllers.Add(controller);
-        }
+            actor.Name = $"Actor_{name.ToString()}";
 
-        /// <summary> Constructs the actor with the correct components. </summary>
-        /// <param name="actor"> The actor whose component is retrieved or created. </param>
-        /// <returns> The actor's <see cref="NeedsComponent"/>, guaranteed non-null. </returns>
-        private NeedsComponent AddComponents(Actor actor)
-        {
-            NeedsComponent result;
-            NeedsComponent? existing = actor.GetComponent<NeedsComponent>();
+            needs?.Entertainment.CurrentValue = 1;  // TODO - Just for now.
 
-            if (existing != null)
-            {
-                result = existing;
-            }
-            else
-            {
-                NeedsComponent? added = actor.TryAddComponent<NeedsComponent>();
-                result = added ?? actor.GetComponent<NeedsComponent>()!;
-            }
-
-            actor.TryAddComponent<AttributeComponent>();
-            actor.TryAddComponent<MemoryComponent>();
-
-            return result;
-        }
-
-        /// <summary>
-        /// Sets the need values for a specific actor according to a three-pattern cycle so that distinct
-        /// GOAP goals activate across the spawned population.
-        ///
-        /// Pattern (index mod 3):
-        /// <list type="bullet">
-        ///   <item>0 — Entertainment low (1), others full → selects <c>KeepEntertained</c>.</item>
-        ///   <item>1 — Hydration low (1), others full → selects <c>StayHydrated</c>.</item>
-        ///   <item>2 — All full → selects <c>WatchPaintDry</c> (no-op fallback).</item>
-        /// </list>
-        ///
-        /// <c>DerivedStat</c> min = 0, max = 10; CurrentValue = 1 yields Percent = 0.1.
-        /// The <c>KeepEntertained</c> and <c>StayHydrated</c> goals succeed only when
-        /// <c>is_entertained</c> / <c>is_hydrated</c> evaluate true (Percent >= 0.9),
-        /// so 0.1 keeps each goal active and selectable.
-        /// </summary>
-        /// <param name="needs">The component whose stat values are written.</param>
-        /// <param name="index">Zero-based spawn index; only the modulo-3 remainder is used.</param>
-        private void ApplyNeedPattern(NeedsComponent needs, Int32 index)
-        {
-            Int32 pattern = index % 3;
-            needs.Entertainment.CurrentValue = 1;
-
-            /*
-            if (pattern == 0)
-            {
-                // Entertainment critically low; Stamina and Hydration remain at max (10).
-                needs.Entertainment.CurrentValue = 1;
-            }
-            else if (pattern == 1)
-            {
-                // Hydration critically low; Stamina and Entertainment remain at max (10).
-                needs.Hydration.CurrentValue = 1;
-            }*/
-            // Pattern 2: all stats default to max — no action required.
-        }
-
-        /// <summary>
-        /// Returns a random 2-D offset uniformly distributed within a disk of <see cref="SpawnRadius"/>.
-        /// The square-root transform on the radius corrects the centre-bias that arises from sampling
-        /// radius linearly — without it, actors cluster near the manager's position.
-        /// </summary>
-        /// <returns>A position vector relative to this node's origin.</returns>
-        private Vector2 RandomOffset(Single spawnRadius)
-        {
-            Single angle = (Single)(_random.NextDouble() * Math.PI * 2.0);
-            Single radius = (Single)(Math.Sqrt(_random.NextDouble()) * spawnRadius);
-            return new Vector2(MathF.Cos(angle) * radius, MathF.Sin(angle) * radius);
+            return actor;
         }
     }
 }
