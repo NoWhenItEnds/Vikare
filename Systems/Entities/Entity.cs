@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Vikare.Entities.Components;
-using Vikare.Types;
 
 namespace Vikare.Entities
 {
@@ -29,6 +28,12 @@ namespace Vikare.Entities
         {
             T component = new T();
             Boolean added = _components.Add(component);
+
+            if (added)
+            {
+                component.OnAddedTo(this);
+            }
+
             return added ? component : null;
         }
 
@@ -45,6 +50,11 @@ namespace Vikare.Entities
             if (newComponent != null)
             {
                 result = _components.Add(newComponent);
+
+                if (result)
+                {
+                    newComponent.OnAddedTo(this);
+                }
             }
 
             return result;
@@ -57,16 +67,47 @@ namespace Vikare.Entities
         public T? GetComponent<T>() where T : EntityComponent => _components.OfType<T>().FirstOrDefault();
 
 
-        /// <summary> Remove a type of component from the entity. </summary>
+        /// <summary> Remove all components of the given type from the entity. </summary>
         /// <typeparam name="T"> The type of component to remove. </typeparam>
-        /// <returns> Whether the component was successfully removed. </returns>
-        public Boolean RemoveComponent<T>() where T : EntityComponent => _components.RemoveWhere(x => x.GetType().Equals(typeof(T))) > 0;
+        /// <returns> True if at least one component was removed; false if none were found. </returns>
+        public Boolean RemoveComponent<T>() where T : EntityComponent
+        {
+            List<EntityComponent> matches = _components.Where(x => x.GetType().Equals(typeof(T))).ToList();
+
+            foreach (EntityComponent match in matches)
+            {
+                _components.Remove(match);
+                match.OnRemovedFrom(this);
+            }
+
+            return matches.Count > 0;
+        }
 
 
         /// <summary> Remove a specific instance of a component from the entity. </summary>
         /// <param name="component"> The component to remove. </param>
         /// <returns> Whether the component was successfully removed. </returns>
-        public Boolean RemoveComponent(EntityComponent component) => _components.Remove(component);
+        public Boolean RemoveComponent(EntityComponent component)
+        {
+            Boolean removed = _components.Remove(component);
+
+            if (removed)
+            {
+                component.OnRemovedFrom(this);
+            }
+
+            return removed;
+        }
+
+
+        /// <inheritdoc/>
+        public override void _PhysicsProcess(double delta)
+        {
+            foreach (EntityComponent component in _components)
+            {
+                component.PhysicsProcess(delta);
+            }
+        }
 
 
         /// <summary> Plays the named animation. </summary>

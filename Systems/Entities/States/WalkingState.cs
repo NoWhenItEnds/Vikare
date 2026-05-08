@@ -48,7 +48,7 @@ namespace Vikare.Entities.States
         /// <inheritdoc/>
         public void PhysicsProcess(Actor actor, Double delta)
         {
-            actor.Velocity = _currentDirection.Normalized() * BASE_SPEED * _speedModifier;
+            actor.DesiredVelocity = _currentDirection.Normalized() * BASE_SPEED * _speedModifier;
         }
 
 

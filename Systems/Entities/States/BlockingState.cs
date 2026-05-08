@@ -13,7 +13,7 @@ namespace Vikare.Entities.States
         /// <inheritdoc/>
         public void Enter(Actor actor)
         {
-            actor.Velocity = Vector2.Zero;
+            actor.DesiredVelocity = Vector2.Zero;
             actor.PlayAnimation(AnimationName, actor.Direction);
         }
 

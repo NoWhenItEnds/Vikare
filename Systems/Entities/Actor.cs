@@ -21,13 +21,20 @@ namespace Vikare.Entities
         /// <summary> The current direction the actor is facing. </summary>
         public Vector2 Direction { get; private set; } = Vector2.Down;
 
+        /// <summary> Sets the velocity the actor wishes to travel at this frame and forwards it to <see cref="NavigationAgent"/> so the RVO2 avoidance solver can compute a safe velocity. </summary>
+        /// <remarks> The actual <see cref="CharacterBody2D.Velocity"/> is written in <see cref="OnVelocityComputed"/>. </remarks>
+        public Vector2 DesiredVelocity
+        {
+            set => NavigationAgent.Velocity = value;
+        }
+
 
         /// <summary> The abilities currently possessed by the actor. </summary>
         private HashSet<AbilityEffect> _abilities = new HashSet<AbilityEffect>();
 
 
         /// <summary>
-        /// Returns the Nth ability in <see cref="Abilities"/> that matches <paramref name="category"/>,
+        /// Returns the Nth ability in <see cref="_abilities"/> that matches <paramref name="category"/>,
         /// where N is zero-based and determined by order of appearance. Returns null when no match exists.
         /// </summary>
         /// <param name="category">The category to search for.</param>
@@ -41,8 +48,8 @@ namespace Vikare.Entities
         }
 
         /// <summary>
-        /// Returns all abilities in <see cref="Abilities"/> that match <paramref name="category"/>,
-        /// in array order. Null slots (possible from partial editor assignment) are skipped.
+        /// Returns all abilities in <see cref="_abilities"/> that match <paramref name="category"/>,
+        /// in set order. Null slots (possible from partial editor assignment) are skipped.
         /// Uses lazy enumeration to avoid allocating a Godot collection.
         /// </summary>
         /// <param name="category">The category to filter by.</param>
@@ -53,14 +60,30 @@ namespace Vikare.Entities
 
 
         /// <inheritdoc/>
-        public override void _PhysicsProcess(Double delta)
+        public override void _Ready()
         {
-            base._PhysicsProcess(delta);
-            if(Velocity != Vector2.Zero)
+            if (!NavigationAgent.AvoidanceEnabled)
+            {
+                throw new InvalidOperationException(
+                    "Actor requires NavigationAgent2D.AvoidanceEnabled = true; movement is driven by the VelocityComputed signal and will never fire when avoidance is disabled.");
+            }
+
+            NavigationAgent.VelocityComputed += OnVelocityComputed;
+        }
+
+
+        /// <summary> Receives the avoidance-adjusted velocity from the RVO2 solver. </summary>
+        /// <param name="safeVelocity">The obstacle-avoiding velocity computed by <see cref="NavigationAgent"/>.</param>
+        private void OnVelocityComputed(Vector2 safeVelocity)
+        {
+            Velocity = safeVelocity;
+
+            if (Velocity != Vector2.Zero)
             {
                 Direction = Velocity.Normalized();  // Set the direction the actor is currently facing.
             }
-            MoveAndSlide(); // End each frame with a slide.
+
+            MoveAndSlide();
         }
 
 

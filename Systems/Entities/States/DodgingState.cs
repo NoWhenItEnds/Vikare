@@ -58,7 +58,7 @@ namespace Vikare.Entities.States
         public void PhysicsProcess(Actor actor, Double delta)
         {
             _currentTime += (Single)delta;
-            actor.Velocity = _dodgeDirection.Normalized() * BASE_SPEED * _speedModifier;
+            actor.DesiredVelocity = _dodgeDirection.Normalized() * BASE_SPEED * _speedModifier;
 
             if (_currentTime >= _targetTime)
             {

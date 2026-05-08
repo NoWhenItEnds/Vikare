@@ -1,9 +1,10 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Vikare.Types;
 using Vikare.Utilities.Extensions;
-using Logger = Vikare.Utilities.Logging.Logger;
+using Vikare.Utilities.Logging;
 
 namespace Vikare.Entities
 {
@@ -14,6 +15,9 @@ namespace Vikare.Entities
     /// </summary>
     public partial class LayeredSprite : Node2D
     {
+        /// <summary> Logger for animation resolution warnings. </summary>
+        private static readonly ILogger Logger = Log.For<LayeredSprite>();
+
         /// <summary> Emitted when a new animation starts. </summary>
         [Signal] public delegate void AnimationStartedEventHandler();
 
@@ -84,13 +88,13 @@ namespace Vikare.Entities
                     }
                     else
                     {
-                        Logger.Instance.Warn($"{frames.ResourcePath} doesn't have an animation called {animationDirection}.", Name);
+                        Logger.LogWarning("{ResourcePath} doesn't have an animation called {AnimationDirection}", frames.ResourcePath, animationDirection);
                     }
                 }
                 else
                 {
                     // We will just silently let it fall through if there isn't a SpriteFrame for the specific combination for a part.
-                    //Logger.Instance.Warn($"No animation found with the path '{key}'.", Name);
+                    //Logger.LogWarning("No animation found with the path {Key}", key);
                 }
             }
 

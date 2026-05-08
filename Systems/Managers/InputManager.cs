@@ -1,15 +1,19 @@
 using System;
 using Godot;
+using Microsoft.Extensions.Logging;
 using Vikare.Entities;
 using Vikare.Entities.Abilities;
+using Vikare.Utilities.Logging;
 using Vikare.Utilities.Singletons;
-using Logger = Vikare.Utilities.Logging.Logger;
 
 namespace Vikare.Managers
 {
     /// <summary> Translates raw Godot input events into <see cref="ActionIntent"/> instances and dispatches them to the registered player's state machine each frame. </summary>
     public partial class InputManager : SingletonNode<InputManager>
     {
+        /// <summary> Logger for this manager's operational and warning messages. </summary>
+        private static readonly ILogger Logger = Log.For<InputManager>();
+
         /// <summary> Analogue stick deadzone; vectors below this magnitude are treated as zero to suppress hardware drift. Valid range: 0.0–1.0. </summary>
         [ExportGroup("Settings")]
         [Export(PropertyHint.Range, "0.0,1.0,")] private Single _analogueDeadzone = 0.2f;
@@ -28,7 +32,7 @@ namespace Vikare.Managers
         {
             if (_player != null)
             {
-                Logger.Instance.Warn($"SetPlayer called whilst '{_player.Name}' is already registered. Overwriting with '{player.Name}'.", Name);
+                Logger.LogWarning("SetPlayer called whilst {ExistingPlayer} is already registered. Overwriting with {NewPlayer}", _player.Name, player.Name);
                 DeregisterPlayer();
             }
 

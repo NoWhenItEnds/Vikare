@@ -91,6 +91,9 @@ namespace Vikare.Managers
                 result = added ?? actor.GetComponent<NeedsComponent>()!;
             }
 
+            actor.TryAddComponent<AttributeComponent>();
+            actor.TryAddComponent<MemoryComponent>();
+
             return result;
         }
 
