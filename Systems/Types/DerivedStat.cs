@@ -6,10 +6,10 @@ namespace Vikare.Types
     public class DerivedStat
     {
         /// <summary> The function used to calculate the current minimum possible value. </summary>
-        private Func<Int32> _minValue;
+        private Func<Single> _minValue;
 
         /// <summary> The stat's minimum possible value. </summary>
-        public Int32 MinValue
+        public Single MinValue
         {
             get
             {
@@ -18,10 +18,10 @@ namespace Vikare.Types
         }
 
         /// <summary> The function used to calculate the current maximum possible value. </summary>
-        private Func<Int32> _maxValue;
+        private Func<Single> _maxValue;
 
         /// <summary> The stat's maximum possible value. </summary>
-        public Int32 MaxValue
+        public Single MaxValue
         {
             get
             {
@@ -31,10 +31,10 @@ namespace Vikare.Types
 
         /// <summary> The current value of the stat. </summary>
         /// <remarks> This value can be outside the limits if the limits are changed so that the value is outside the bounds. This is intentional. </remarks>
-        private Int32 _currentValue;
+        private Single _currentValue;
 
         /// <summary> The current value of the stat. </summary>
-        public Int32 CurrentValue
+        public Single CurrentValue
         {
             get
             {
@@ -48,16 +48,16 @@ namespace Vikare.Types
         }
 
         /// <summary> Emitted when the value is changed. Contains the new current value for the statistic. </summary>
-        public event Action<Int32> ValueChanged;
+        public event Action<Single> ValueChanged;
 
         /// <summary> Normalised value in <c>[0, 1]</c> representing how far <c>CurrentValue</c> sits between <c>MinValue</c> and <c>MaxValue</c>. </summary>
-        public Single Percent => (Single)(CurrentValue - MinValue) / (MaxValue - MinValue);
+        public Single Percent => (CurrentValue - MinValue) / (MaxValue - MinValue);
 
 
         /// <summary> A statistic whose values are based upon those of another. </summary>
         /// <param name="minValue"> The function used to calculate the current minimum possible value. </param>
         /// <param name="maxValue"> The function used to calculate the current maximum possible value. </param>
-        public DerivedStat(Func<Int32> minValue, Func<Int32> maxValue)
+        public DerivedStat(Func<Single> minValue, Func<Single> maxValue)
         {
             _minValue = minValue;
             _maxValue = maxValue;
@@ -69,7 +69,7 @@ namespace Vikare.Types
         /// <param name="minValue"> The function used to calculate the current minimum possible value. </param>
         /// <param name="maxValue"> The function used to calculate the current maximum possible value. </param>
         /// <param name="initialValue"> The initial value to set the stat to. </param>
-        public DerivedStat(Func<Int32> minValue, Func<Int32> maxValue, Int32 initialValue)
+        public DerivedStat(Func<Single> minValue, Func<Single> maxValue, Single initialValue)
         {
             _minValue = minValue;
             _maxValue = maxValue;

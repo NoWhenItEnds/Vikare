@@ -13,10 +13,10 @@ namespace Vikare.Types
         [Export] public String Name { get; private set; }
 
         /// <summary> The statistic's minimum value. The actual value will be clamped to this. </summary>
-        private Int32 _minValue;
+        private Single _minValue;
 
         /// <summary> The statistic's minimum value. The actual value will be clamped to this. </summary>
-        [Export] public Int32 MinValue
+        [Export] public Single MinValue
         {
             get
             {
@@ -33,10 +33,10 @@ namespace Vikare.Types
         }
 
         /// <summary> The statistic's maximum value. The actual value will be clamped to this. </summary>
-        private Int32 _maxValue;
+        private Single _maxValue;
 
         /// <summary> The statistic's maximum value. The actual value will be clamped to this. </summary>
-        [Export] public Int32 MaxValue
+        [Export] public Single MaxValue
         {
             get
             {
@@ -53,10 +53,10 @@ namespace Vikare.Types
         }
 
         /// <summary> The statistic's base value before modifiers are applied. </summary>
-        private Int32 _baseValue;
+        private Single _baseValue;
 
         /// <summary> The statistic's base value before modifiers are applied. </summary>
-        [Export] public Int32 BaseValue
+        [Export] public Single BaseValue
         {
             get
             {
@@ -70,13 +70,13 @@ namespace Vikare.Types
         }
 
         /// <summary> When the statistic changes, this is its previous value. </summary>
-        public Int32 PreviousValue { get; private set; }
+        public Single PreviousValue { get; private set; }
 
         /// <summary> The current value of the statistic after modifiers have been applied. </summary>
-        public Int32 CurrentValue { get; private set; }
+        public Single CurrentValue { get; private set; }
 
         /// <summary> Emitted when the value is changed. Contains the new current value for the statistic. </summary>
-        public event Action<Int32> ValueChanged;
+        public event Action<Single> ValueChanged;
 
         /// <summary> An amount, from 0.0 - 1.0 the statistic is between its min and max value. </summary>
         public Single Percent => (CurrentValue - MinValue) / (MaxValue - MinValue);
@@ -95,7 +95,7 @@ namespace Vikare.Types
         /// <param name="baseValue"> The statistic's base value before modifiers are applied. </param>
         /// <param name="minValue"> The statistic's minimum value. The actual value will be clamped to this. </param>
         /// <param name="maxValue"> The statistic's maximum value. The actual value will be clamped to this. </param>
-        public Stat(String name, Int32 baseValue, Int32 minValue, Int32 maxValue)
+        public Stat(String name, Single baseValue, Single minValue, Single maxValue)
         {
             Name = name;
             MinValue = minValue;
@@ -119,7 +119,7 @@ namespace Vikare.Types
         /// <param name="modifiers"> The modifier array to add. </param>
         public void AddModifier(StatModifier[] modifiers)
         {
-            Int32 added = 0;
+            Single added = 0;
             foreach (StatModifier modifier in modifiers)
             {
                 added += _modifiers.Add(modifier) ? 1 : 0;
@@ -147,7 +147,7 @@ namespace Vikare.Types
         /// <param name="modifiers"> The modifier array to remove. </param>
         public void RemoveModifier(StatModifier[] modifiers)
         {
-            Int32 removed = 0;
+            Single removed = 0;
             foreach (StatModifier modifier in modifiers)
             {
                 removed += _modifiers.Remove(modifier) ? 1 : 0;
@@ -186,7 +186,7 @@ namespace Vikare.Types
         /// <summary> Calculate the stat's current value. </summary>
         private void CalculateValue()
         {
-            Int32 oldCurrent = CurrentValue;
+            Single oldCurrent = CurrentValue;
             CurrentValue = BaseValue;
 
             foreach (StatModifier modifier in _modifiers.OrderBy(x => x.Priority))
@@ -224,7 +224,7 @@ namespace Vikare.Types
         }
 
         /// <summary> The order the modifier should be applied to the stat. Lower is applied first. </summary>
-        public Int32 Priority { get; init; } = 0;
+        public Single Priority { get; init; } = 0;
 
         /// <summary> What object is applying the modification. </summary>
         /// <remarks> A null indicates that there isn't one. </remarks>
@@ -234,15 +234,15 @@ namespace Vikare.Types
         public required StatOperation Operation { get; init; }
 
         /// <summary> The actual value that affects the entity stat. </summary>
-        public required Int32 Value { get; init; }
+        public required Single Value { get; init; }
 
 
         /// <summary> Functionally apply the modifier to the given current value. </summary>
         /// <param name="currentValue"> The current value to modify. </param>
         /// <returns> The result of the operation. </returns>
-        public Int32 Apply(Int32 currentValue)
+        public Single Apply(Single currentValue)
         {
-            Int32 result = currentValue;
+            Single result = currentValue;
 
             switch (Operation)
             {
