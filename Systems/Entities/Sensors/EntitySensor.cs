@@ -38,7 +38,7 @@ namespace Vikare.Entities.Sensors
 
         /// <summary>
         /// Identifies which perceptual channel this sensor represents.
-        /// Stored on each <see cref="Memory.MemoryEntry"/> for downstream use.
+        /// Stored on each <see cref="Memory.SensorMemory"/> for downstream use.
         /// </summary>
         public abstract SensorChannel Channel { get; }
 

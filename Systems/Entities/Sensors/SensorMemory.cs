@@ -1,8 +1,7 @@
 using System;
 using Godot;
-using Vikare.Entities.Sensors;
 
-namespace Vikare.Entities.Memory
+namespace Vikare.Entities.Sensors
 {
     /// <summary>
     /// An immutable snapshot of a single perceived entity, held inside <see cref="EntityMemory"/>.
@@ -12,7 +11,7 @@ namespace Vikare.Entities.Memory
     /// unobserved — callers must treat it as a stale estimate once the entity has left the sensor.
     /// </para>
     /// </summary>
-    public sealed class MemoryEntry
+    public sealed class SensorMemory
     {
         /// <summary> The perceived entity. Never null after construction. </summary>
         public Entity Entity { get; }
@@ -48,7 +47,7 @@ namespace Vikare.Entities.Memory
         /// <param name="position"> World-space position at the moment of detection. </param>
         /// <param name="currentTime"> The game-world clock value at detection, from <see cref="Vikare.Managers.GameManager.CurrentTime"/>. </param>
         /// <param name="channel"> The sensor channel that produced the detection. </param>
-        public MemoryEntry(Entity entity, Vector2 position, DateTime currentTime, SensorChannel channel)
+        public SensorMemory(Entity entity, Vector2 position, DateTime currentTime, SensorChannel channel)
         {
             Entity = entity;
             LastKnownPosition = position;

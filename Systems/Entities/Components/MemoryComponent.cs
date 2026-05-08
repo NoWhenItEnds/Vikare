@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Godot;
-using Vikare.Entities.Memory;
 using Vikare.Entities.Sensors;
 using Vikare.Managers;
 
@@ -21,14 +20,14 @@ namespace Vikare.Entities.Components
         /// Read-only view of all currently held memory entries, keyed by entity.
         /// Entries may be currently detected or ageing towards pruning.
         /// </summary>
-        public IReadOnlyDictionary<Entity, MemoryEntry> Entries => _readOnlyEntries;
+        public IReadOnlyDictionary<Entity, SensorMemory> Entries => _readOnlyEntries;
 
 
         /// <summary> Mutable backing store. </summary>
-        private readonly Dictionary<Entity, MemoryEntry> _entries = new Dictionary<Entity, MemoryEntry>();
+        private readonly Dictionary<Entity, SensorMemory> _entries = new Dictionary<Entity, SensorMemory>();
 
         /// <summary> Cached read-only wrapper around <see cref="_entries"/>. </summary>
-        private readonly ReadOnlyDictionary<Entity, MemoryEntry> _readOnlyEntries;
+        private readonly ReadOnlyDictionary<Entity, SensorMemory> _readOnlyEntries;
 
         /// <summary> Reusable collection of keys scheduled for removal, allocated once to avoid per-frame heap pressure. </summary>
         private readonly List<Entity> _toRemove = new List<Entity>();
@@ -55,7 +54,7 @@ namespace Vikare.Entities.Components
         /// </summary>
         public MemoryComponent()
         {
-            _readOnlyEntries = new ReadOnlyDictionary<Entity, MemoryEntry>(_entries);
+            _readOnlyEntries = new ReadOnlyDictionary<Entity, SensorMemory>(_entries);
         }
 
 
@@ -103,13 +102,13 @@ namespace Vikare.Entities.Components
         {
             DateTime now = GameManager.Instance.CurrentTime;
 
-            if (_entries.TryGetValue(entity, out MemoryEntry? existing))
+            if (_entries.TryGetValue(entity, out SensorMemory? existing))
             {
                 existing.Refresh(position, now, channel);
             }
             else
             {
-                _entries[entity] = new MemoryEntry(entity, position, now, channel);
+                _entries[entity] = new SensorMemory(entity, position, now, channel);
             }
         }
 
@@ -122,7 +121,7 @@ namespace Vikare.Entities.Components
         /// <param name="entity"> The entity that has left the sensor volume. </param>
         public void Forget(Entity entity)
         {
-            if (_entries.TryGetValue(entity, out MemoryEntry? entry))
+            if (_entries.TryGetValue(entity, out SensorMemory? entry))
             {
                 entry.MarkLost();
             }
@@ -136,7 +135,7 @@ namespace Vikare.Entities.Components
 
             _toRemove.Clear();
 
-            foreach (KeyValuePair<Entity, MemoryEntry> pair in _entries)
+            foreach (KeyValuePair<Entity, SensorMemory> pair in _entries)
             {
                 Boolean entityFreed = !GodotObject.IsInstanceValid(pair.Value.Entity);
                 Boolean notCurrentlyDetected = !pair.Value.IsCurrentlyDetected;
@@ -161,7 +160,7 @@ namespace Vikare.Entities.Components
         /// <param name="entity"> The entity to look up. </param>
         /// <param name="entry"> The entry if found; null otherwise. </param>
         /// <returns> True if an entry was found. </returns>
-        public Boolean TryGet(Entity entity, out MemoryEntry? entry) => _entries.TryGetValue(entity, out entry);
+        public Boolean TryGet(Entity entity, out SensorMemory? entry) => _entries.TryGetValue(entity, out entry);
 
 
         /// <summary>
@@ -191,7 +190,7 @@ namespace Vikare.Entities.Components
         /// Discards all current memory entries and clears the removal buffer.
         /// Sensor subscriptions are not affected — they persist across tree-exit and re-entry cycles
         /// (see <see cref="OnAddedTo"/>). Call from <c>Actor._ExitTree</c> to prevent entries whose
-        /// <see cref="MemoryEntry.IsCurrentlyDetected"/> flag is still true from surviving into a new
+        /// <see cref="SensorMemory.IsCurrentlyDetected"/> flag is still true from surviving into a new
         /// lifecycle — those entries are never pruned by decay because no <see cref="Forget"/> call
         /// fires when the tree exits.
         /// </summary>
