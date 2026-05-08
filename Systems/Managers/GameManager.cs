@@ -1,8 +1,6 @@
 using Godot;
 using System;
 using Microsoft.Extensions.Logging;
-using Vikare.Entities;
-using Vikare.Entities.Components;
 using Vikare.Utilities.Logging;
 using Vikare.Utilities.Singletons;
 
@@ -14,8 +12,6 @@ namespace Vikare.Managers
         /// <summary> Logger for this manager's operational messages. </summary>
         private static readonly ILogger Logger = Log.For<GameManager>();
 
-        [Export] private Actor _player = null!;
-
         [Export] private Single _timescale = 12f;
 
         /// <summary> The current time within the game world. </summary>
@@ -25,12 +21,6 @@ namespace Vikare.Managers
         public override void _Ready()
         {
             Logger.LogInformation("Hello, World!");
-
-            _player.TryAddComponent<AttributeComponent>();
-            _player.TryAddComponent<NeedsComponent>();
-            _player.TryAddComponent<MemoryComponent>();
-            _player.IsPlayerControlled = true;
-            InputManager.Instance.RegisterPlayer(_player);
         }
 
 

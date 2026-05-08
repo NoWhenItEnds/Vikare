@@ -19,10 +19,10 @@ namespace Vikare.Managers
 
         /// <summary> Total number of actors to spawn. </summary>
         [ExportGroup("Settings")]
-        [Export] private Int32 _spawnCount = 3;
+        [Export] private Int32 _spawnCount = 100;
 
         /// <summary> Radius in pixels around this node's <c>GlobalPosition</c> within which actors are placed. </summary>
-        [Export] private Single _spawnRadius = 200f;
+        [Export] private Single _spawnRadius = 500f;
 
 
         /// <summary> A map between actors and their linked controllers. </summary>
@@ -39,6 +39,12 @@ namespace Vikare.Managers
                 ActorController controller = new ActorController(actor, false);
                 _actors.Add(actor, controller);
             }
+
+            // Spawn Player.
+            Actor player = SpawnActor(GlobalPosition.RandomOffset(_spawnRadius));
+            _actors.Add(player, null);
+            player.IsPlayerControlled = true;
+            InputManager.Instance.RegisterPlayer(player);
         }
 
 
