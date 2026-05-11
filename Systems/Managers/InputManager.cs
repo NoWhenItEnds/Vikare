@@ -22,6 +22,10 @@ namespace Vikare.Managers
         [Export] public Godot.Collections.Array<AbilityBinding> AbilityBindings { get; set; } = new();
 
 
+        /// <summary> Represents the central point (the center of the screen) that the player is viewing. </summary>
+        public Vector2 ViewPosition => _player != null ? _player.GlobalPosition : Vector2.Zero;
+
+
         /// <summary> Player actor currently receiving input; null when no player has registered. </summary>
         private Actor? _player;
 

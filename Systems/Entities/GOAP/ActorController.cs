@@ -276,6 +276,20 @@ namespace Vikare.Entities.GOAP
                     .Build());
             }
 
+            if (AvailableFacts.TryGetValue("is_tired", out ActorFact? isTiredFact))
+            {
+                actions.Add(new ActorAction.Builder("Wander", new GoToEntityStrategy(Actor))
+                    .WithCost(() => 1f) // TODO - Based on distance?
+                    .AddOutcome(isEntertainedFact)
+                    .Build());
+
+                actions.Add(new ActorAction.Builder("UseBed", new GoToEntityStrategy(Actor))
+                    .AddPrecondition(AvailableFacts["at_bed"])
+                    .WithCost(() => 1f) // TODO - Based on distance?
+                    .AddOutcome(AvailableFacts["is_rested"])
+                    .Build());
+            }
+
             return actions.ToArray();
         }
 

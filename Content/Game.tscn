@@ -5,6 +5,8 @@
 [ext_resource type="Script" uid="uid://vg8sgbmj14b0" path="res://Systems/Managers/ActorManager.cs" id="3_3jj2t"]
 [ext_resource type="PackedScene" uid="uid://bwcux83rh4l5k" path="res://Content/Prefabs/Actor.tscn" id="3_hls3d"]
 [ext_resource type="TileSet" uid="uid://bukl6ltcw62v8" path="res://Content/Resources/TileSets/terrain.tres" id="5_mtcwf"]
+[ext_resource type="Script" uid="uid://cdf4ml8swb5i8" path="res://Systems/Managers/CameraManager.cs" id="6_13v0n"]
+[ext_resource type="Script" uid="uid://dbiarlwwg818l" path="res://Systems/Managers/UIManager.cs" id="7_ubvt2"]
 
 [node name="Game" type="Node" unique_id=1020175912]
 script = ExtResource("1_k1v7w")
@@ -22,4 +24,44 @@ tile_set = ExtResource("5_mtcwf")
 script = ExtResource("3_3jj2t")
 _actorPrefab = ExtResource("3_hls3d")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1781091268]
+[node name="Camera" type="Node2D" parent="." unique_id=789845675 node_paths=PackedStringArray("_mainCamera")]
+script = ExtResource("6_13v0n")
+_mainCamera = NodePath("Main Camera")
+
+[node name="Main Camera" type="Camera2D" parent="Camera" unique_id=1781091268]
+
+[node name="Main Camera Notifier" type="VisibleOnScreenNotifier2D" parent="Camera/Main Camera" unique_id=369620268]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1067296581]
+
+[node name="UI" type="Control" parent="CanvasLayer" unique_id=271643555 node_paths=PackedStringArray("_timeLabel")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("7_ubvt2")
+_timeLabel = NodePath("HUD/HBoxContainer/Time Label")
+
+[node name="HUD" type="Control" parent="CanvasLayer/UI" unique_id=782899131]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 64.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/UI/HUD" unique_id=688705503]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Time Label" type="RichTextLabel" parent="CanvasLayer/UI/HUD/HBoxContainer" unique_id=873545166]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+text = "00:00"
+vertical_alignment = 1
