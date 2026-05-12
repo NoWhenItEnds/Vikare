@@ -5,7 +5,6 @@ using Godot;
 using Vikare.Entities.Components;
 using Vikare.Entities.GOAP.Advertisers;
 using Vikare.Entities.GOAP.Strategies;
-using Vikare.Utilities.Extensions;
 
 namespace Vikare.Entities.GOAP
 {
@@ -30,22 +29,22 @@ namespace Vikare.Entities.GOAP
         /// <remarks> [0] is the latest. [^1] is the oldest. </remarks>
         public ActorGoal[] PreviousGoals { get; private set; } = new ActorGoal[10];
 
-        /// <summary> The truths the actor knows about the world — keyed by fact name. </summary>
-        public readonly Dictionary<String, ActorFact> AvailableFacts = new Dictionary<String, ActorFact>();
-
         /// <summary> The goals the actor will seek to address. </summary>
         public readonly HashSet<ActorGoal> AvailableGoals = new HashSet<ActorGoal>();
-
-        /// <summary> The potential actions this actor has access to. </summary>
-        public readonly HashSet<ActorAction> AvailableActions = new HashSet<ActorAction>();
 
         /// <summary> The goals assigned by the actor's organisation. </summary>
         public readonly HashSet<ActorGoal> OrganisationGoals = new HashSet<ActorGoal>();
 
 
-        /// <summary> Advertisers this actor knows about. </summary>
-        /// <remarks> Empty by default. Call <see cref="LearnAdvertiser"/> to populate from a sensor or other learning source. </remarks>
+        /// <summary> Advertisers this actor knows about. Facts and actions are re-contributed each planning round so that forgotten advertisers are automatically pruned from the world-model. </summary>
+        /// <remarks> Empty until a sensor or other learning source populates it. </remarks>
         private readonly HashSet<ActionAdvertiser> _knownAdvertisers = new HashSet<ActionAdvertiser>();   // TODO - Implement.
+
+        /// <summary> The baseline facts built once at construction time; independent of any advertiser. </summary>
+        private readonly Dictionary<String, ActorFact> _basicFacts;
+
+        /// <summary> The baseline actions built once at construction time; independent of any advertiser. </summary>
+        private readonly HashSet<ActorAction> _basicActions;
 
         /// <summary> The planner used to build action sequences. </summary>
         private readonly ActorPlanner _planner = new ActorPlanner();
@@ -75,14 +74,14 @@ namespace Vikare.Entities.GOAP
 
         /// <summary> Uses a GOAP implementation to control an entity. The AI brain that controls a unit. </summary>
         /// <param name="actor"> The entity this controller is responsible for controlling. </param>
-        /// <param name="useLogging"> Whether the controller should log it's processes. </param>
+        /// <param name="useLogging"> Whether the controller should log its processes. </param>
         public ActorController(Actor actor, Boolean useLogging = false)
         {
             Actor = actor;
             _useLogging = useLogging;
 
-            AvailableFacts = AvailableFacts.Add(BuildBasicFacts());
-            AvailableActions.UnionWith(BuildBasicActions());
+            _basicFacts = new Dictionary<String, ActorFact>(BuildBasicFacts());
+            _basicActions = new HashSet<ActorAction>(BuildBasicActions());
             AvailableGoals.UnionWith(BuildBasicGoals());
         }
 
@@ -158,7 +157,8 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Attempts to calculate a new plan. When a goal is already active, only goals that exceed its utility by at least <see cref="_utilityInterruptMargin"/> are considered, preventing jitter. </summary>
+        /// <summary> Attempts to calculate a new plan. Rebuilds from scratch each round so that facts and actions from forgotten advertisers are not carried forward. </summary>
+        /// <remarks> When a goal is already active, only goals that exceed its utility by at least <see cref="_utilityInterruptMargin"/> are considered, preventing jitter. </remarks>
         private void CalculatePlan()
         {
             HashSet<ActorGoal> goalsToCheck;
@@ -173,24 +173,51 @@ namespace Vikare.Entities.GOAP
                 goalsToCheck = AvailableGoals;
             }
 
-            HashSet<ActorAction> actions = BuildActionSetForPlanning();
-            ActionPlan? potentialPlan = _planner.BuildPlan(goalsToCheck, actions);
+            Dictionary<String, ActorFact> runtimeFacts = BuildRuntimeFacts();
+            HashSet<ActorAction> runtimeActions = BuildRuntimeActions(runtimeFacts);
+            ActionPlan? potentialPlan = _planner.BuildPlan(goalsToCheck, runtimeActions);
 
             CurrentPlan = potentialPlan;
         }
 
 
-        /// <summary> Builds the full action set for one planning round by unioning static actions with any actions advertised by world objects this actor knows about. </summary>
-        /// <returns> A new set containing all planning-eligible actions for this round. </returns>
-        private HashSet<ActorAction> BuildActionSetForPlanning()
+        /// <summary> Builds the current facts from the stable baseline facts plus any facts contributed by currently-known advertisers. </summary>
+        /// <returns> The constructed facts. </returns>
+        private Dictionary<String, ActorFact> BuildRuntimeFacts()
         {
-            HashSet<ActorAction> actions = new HashSet<ActorAction>(AvailableActions);
+            Dictionary<String, ActorFact> result = new Dictionary<string, ActorFact>(_basicFacts);
 
             foreach (ActionAdvertiser advertiser in _knownAdvertisers)
             {
-                foreach (ActorAction advertisedAction in advertiser.GetAdvertisedActions(this))
+                foreach (KeyValuePair<String, ActorFact> entry in advertiser.GetFacts(Actor))
                 {
-                    actions.Add(advertisedAction);
+                    if (!result.TryAdd(entry.Key, entry.Value))
+                    {
+                        GD.PushError($"Advertiser {advertiser.GetType().Name} tried to contribute fact '{entry.Key}' but a fact with that key is already present.");
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary> Builds the full action set for one planning round by combining the actor's standing actions with any actions advertised by world objects currently known to this actor. </summary>
+        /// <param name="runtimeFacts"> The current facts that exist at this point in runtime. </param>
+        /// <returns> A new set containing all planning-eligible actions for this round. </returns>
+        /// <remarks> Must be called after <see cref="BuildRuntimeFacts"/> so that advertiser-contributed facts are already present. </remarks>
+        private HashSet<ActorAction> BuildRuntimeActions(Dictionary<String, ActorFact> runtimeFacts)
+        {
+            HashSet<ActorAction> actions = new HashSet<ActorAction>(_basicActions);
+
+            foreach (ActionAdvertiser advertiser in _knownAdvertisers)
+            {
+                foreach (ActorAction action in advertiser.GetActions(Actor, runtimeFacts))
+                {
+                    if (!actions.Add(action))
+                    {
+                        GD.PushError($"Advertiser {advertiser.GetType().Name} tried to contribute action '{action.Name}' but an action with that type is already present.");
+                    }
                 }
             }
 
@@ -213,8 +240,8 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Build's the agent's initial facts relating to basic upkeep. </summary>
-        /// <returns> A set containing the constructed facts. </returns>
+        /// <summary> Builds the actor's baseline facts — those that are always present regardless of which advertisers are known. </summary>
+        /// <returns> A dictionary of baseline facts keyed by fact name. </returns>
         private Dictionary<String, ActorFact> BuildBasicFacts()
         {
             Dictionary<String, ActorFact> facts = new Dictionary<String, ActorFact>();
@@ -256,19 +283,19 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Build's the agent's initial actions relating to basic upkeep. </summary>
+        /// <summary> Builds the actor's standing actions — those that are always available regardless of perceived advertisers. </summary>
         /// <returns> A set containing the constructed actions. </returns>
         private ActorAction[] BuildBasicActions()
         {
             HashSet<ActorAction> actions = new HashSet<ActorAction>();
 
-            ActorFact nothingFact = AvailableFacts["nothing"];
+            ActorFact nothingFact = _basicFacts["nothing"];
 
             actions.Add(new ActorAction.Builder("Relax", new IdleStrategy(Actor, 1f))   // TODO - Based off something?
                 .AddOutcome(nothingFact)
                 .Build());
 
-            if (AvailableFacts.TryGetValue("is_entertained", out ActorFact? isEntertainedFact))
+            if (_basicFacts.TryGetValue("is_entertained", out ActorFact? isEntertainedFact))
             {
                 actions.Add(new ActorAction.Builder("Wander", new WanderStrategy(Actor))
                     .WithCost(() => 1f) // TODO - Based on distance?
@@ -276,25 +303,11 @@ namespace Vikare.Entities.GOAP
                     .Build());
             }
 
-            if (AvailableFacts.TryGetValue("is_tired", out ActorFact? isTiredFact))
-            {
-                actions.Add(new ActorAction.Builder("Wander", new GoToEntityStrategy(Actor))
-                    .WithCost(() => 1f) // TODO - Based on distance?
-                    .AddOutcome(isEntertainedFact)
-                    .Build());
-
-                actions.Add(new ActorAction.Builder("UseBed", new GoToEntityStrategy(Actor))
-                    .AddPrecondition(AvailableFacts["at_bed"])
-                    .WithCost(() => 1f) // TODO - Based on distance?
-                    .AddOutcome(AvailableFacts["is_rested"])
-                    .Build());
-            }
-
             return actions.ToArray();
         }
 
 
-        /// <summary> Build's the agent's initial goals relating to basic upkeep. </summary>
+        /// <summary> Builds the actor's standing goals — those that are always active regardless of perceived advertisers. </summary>
         /// <returns> A set containing the constructed goals. </returns>
         private ActorGoal[] BuildBasicGoals()
         {
@@ -302,17 +315,17 @@ namespace Vikare.Entities.GOAP
 
             goals.Add(new ActorGoal.Builder("WatchPaintDry", GoalSource.BASIC)
                 .WithUtility(WatchPaintDryUtility)
-                .WithDesiredOutcome(AvailableFacts["nothing"])
+                .WithDesiredOutcome(_basicFacts["nothing"])
                 .Build());
 
             goals.Add(new ActorGoal.Builder("KeepEntertained", GoalSource.BASIC)
                 .WithUtility(MaxDriveUtility)
-                .WithDesiredOutcome(AvailableFacts["is_entertained"])
+                .WithDesiredOutcome(_basicFacts["is_entertained"])
                 .Build());
 
             goals.Add(new ActorGoal.Builder("StayHydrated", GoalSource.BASIC)
                 .WithUtility(MaxDriveUtility)
-                .WithDesiredOutcome(AvailableFacts["is_hydrated"])
+                .WithDesiredOutcome(_basicFacts["is_hydrated"])
                 .Build());
 
             return goals.ToArray();

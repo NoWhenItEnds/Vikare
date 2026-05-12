@@ -4,16 +4,16 @@ using Vikare.Entities.GOAP.Strategies;
 
 namespace Vikare.Entities.GOAP.Advertisers
 {
-    /// <summary> An object an actor can interact with to restore hydration — wells, rivers, troughs, etc. </summary>
-    public class WaterSourceAdvertiser : ActionAdvertiser
+    /// <summary> An object an actor can interact with to restore stamina — beds, chairs, hammocks, etc. </summary>
+    public class StaminaRestoringAdvertiser : ActionAdvertiser
     {
         /// <summary> Squared interaction radius in world units; the actor is considered adjacent when its squared distance to the host falls within this threshold (equivalent to a 2-unit radius). </summary>
         private const Single _atRangeSquared = 4f;
 
 
-        /// <summary> Binds the advertiser to its host entity. </summary>
-        /// <param name="host"> The entity at whose location the drink action will be offered. </param>
-        public WaterSourceAdvertiser(Entity host) : base(host) { }
+        /// <summary> An object an actor can interact with to restore stamina — beds, chairs, hammocks, etc. </summary>
+        /// <param name="host"> The entity at whose location the restore action will be offered. </param>
+        public StaminaRestoringAdvertiser(Entity host) : base(host) { }
 
 
         /// <inheritdoc/>
@@ -44,11 +44,11 @@ namespace Vikare.Entities.GOAP.Advertisers
 
             actions.Add(moveToAction);
 
-            if (existingFacts.TryGetValue("is_hydrated", out ActorFact? isHydratedFact))
+            if (existingFacts.TryGetValue("is_fresh", out ActorFact? isFreshFact))
             {
                 ActorAction useAction = new ActorAction.Builder($"Use_{_hostId}", new IdleStrategy(actor, 1f))
                     .AddPrecondition(atFact)
-                    .AddOutcome(isHydratedFact)
+                    .AddOutcome(isFreshFact)
                     .Build();
 
                 actions.Add(useAction);
