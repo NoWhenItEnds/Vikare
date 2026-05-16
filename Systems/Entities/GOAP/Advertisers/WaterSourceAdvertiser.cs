@@ -1,19 +1,22 @@
 using System;
 using System.Collections.Generic;
+using Godot;
+using Vikare.Entities.Components;
 using Vikare.Entities.GOAP.Strategies;
 
 namespace Vikare.Entities.GOAP.Advertisers
 {
     /// <summary> An object an actor can interact with to restore hydration — wells, rivers, troughs, etc. </summary>
-    public class WaterSourceAdvertiser : ActionAdvertiser
+    [GlobalClass]
+    public partial class WaterSourceAdvertiser : ActionAdvertiser
     {
-        /// <summary> Squared interaction radius in world units; the actor is considered adjacent when its squared distance to the host falls within this threshold (equivalent to a 2-unit radius). </summary>
-        private const Single _atRangeSquared = 4f;
-
-
-        /// <summary> Binds the advertiser to its host entity. </summary>
-        /// <param name="host"> The entity at whose location the drink action will be offered. </param>
-        public WaterSourceAdvertiser(Entity host) : base(host) { }
+        /// <summary>
+        /// Hydration restored per second whilst the actor is drinking from this source.
+        /// With the default <c>DerivedStat</c> range of [0, 10], a value of 5 fills the bar in two seconds.
+        /// </summary>
+        [ExportGroup("Settings")]
+        [Export(PropertyHint.Range, "0.0,100.0,0.1,or_greater")]
+        public Single HydrationRate { get; set; } = 5f;
 
 
         /// <inheritdoc/>
@@ -22,8 +25,10 @@ namespace Vikare.Entities.GOAP.Advertisers
             Dictionary<String, ActorFact> facts = new Dictionary<String, ActorFact>();
 
             String factKey = $"at_{_hostId}";
+            Single atRangeSquared = InteractionRadius * InteractionRadius;
+
             facts.Add(factKey, new ActorFact.Builder(factKey)
-                .WithCondition(() => actor.GlobalPosition.DistanceSquaredTo(_host.GlobalPosition) <= _atRangeSquared)
+                .WithCondition(() => actor.GlobalPosition.DistanceSquaredTo(_host.GlobalPosition) <= atRangeSquared)
                 .Build());
 
             return facts;
@@ -44,9 +49,21 @@ namespace Vikare.Entities.GOAP.Advertisers
 
             actions.Add(moveToAction);
 
-            if (existingFacts.TryGetValue("is_hydrated", out ActorFact? isHydratedFact))
+            NeedsComponent? needs = actor.GetComponent<NeedsComponent>();
+
+            if (needs != null && existingFacts.TryGetValue("is_hydrated", out ActorFact? isHydratedFact))
             {
-                ActorAction useAction = new ActorAction.Builder($"Use_{_hostId}", new IdleStrategy(actor, 1f))
+                Single rate = HydrationRate;
+
+                ActorAction useAction = new ActorAction.Builder(
+                        $"Use_{_hostId}",
+                        new UseAdvertiserStrategy(
+                            actor,
+                            _host,
+                            duration: 1f,
+                            interactionRadius: InteractionRadius,
+                            onTick: delta => { needs.Hydration.CurrentValue += rate * delta; },
+                            onComplete: () => { }))
                     .AddPrecondition(atFact)
                     .AddOutcome(isHydratedFact)
                     .Build();

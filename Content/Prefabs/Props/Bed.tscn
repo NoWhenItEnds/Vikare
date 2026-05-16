@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://c46lpqlqtuc8g"]
+
+[ext_resource type="Script" uid="uid://c06dlunij58ff" path="res://Systems/Entities/Prop.cs" id="1_64et8"]
+[ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="2_7s6yu"]
+[ext_resource type="Texture2D" uid="uid://trlvcm1ui24x" path="res://icon.svg" id="3_ed3ml"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ed3ml"]
+size = Vector2(8, 8)
+
+[node name="Bed" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Collision", "Sprite")]
+script = ExtResource("1_64et8")
+Collision = NodePath("CollisionShape2D")
+Sprite = NodePath("LayeredSprite")
+
+[node name="LayeredSprite" type="Node2D" parent="." unique_id=2070670555]
+position = Vector2(0, -16)
+script = ExtResource("2_7s6yu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
+shape = SubResource("RectangleShape2D_ed3ml")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=778488313]
+scale = Vector2(0.06, 0.06)
+texture = ExtResource("3_ed3ml")

@@ -39,6 +39,10 @@ namespace Vikare.Entities
     public class BlockIntent(Vector2 direction) : ActionIntent(direction) { }
 
 
+    /// <summary> The actor desires to begin a stationary interaction with a host entity. </summary>
+    public class UseIntent() : ActionIntent(Vector2.Zero) { }
+
+
     /// <summary> The actor desires to use an ability (potentially on someone or something). </summary>
     public class AbilityIntent : ActionIntent
     {

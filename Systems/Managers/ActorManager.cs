@@ -25,6 +25,10 @@ namespace Vikare.Managers
         [Export] private Single _spawnRadius = 500f;
 
 
+        /// <summary> The current player-controlled actor. </summary>
+        public Actor? Player { get; private set; } = null;  // TODO - Use the subscribe from InputManager.
+
+
         /// <summary> A map between actors and their linked controllers. </summary>
         public readonly Dictionary<Actor, ActorController?> _actors = new Dictionary<Actor, ActorController?>();
 
@@ -41,10 +45,10 @@ namespace Vikare.Managers
             }
 
             // Spawn Player.
-            Actor player = SpawnActor(GlobalPosition.RandomOffset(_spawnRadius));
-            _actors.Add(player, null);
-            player.IsPlayerControlled = true;
-            InputManager.Instance.RegisterPlayer(player);
+            Player = SpawnActor(GlobalPosition.RandomOffset(_spawnRadius));
+            _actors.Add(Player, null);
+            Player.IsPlayerControlled = true;
+            InputManager.Instance.RegisterPlayer(Player);
         }
 
 

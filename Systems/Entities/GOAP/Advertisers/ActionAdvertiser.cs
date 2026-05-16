@@ -1,24 +1,37 @@
 using System;
 using System.Collections.Generic;
+using Godot;
 
 namespace Vikare.Entities.GOAP.Advertisers
 {
     /// <summary> An object in the world that offers facts and actions to actors who can perceive it. </summary>
-    public abstract class ActionAdvertiser
+    public abstract partial class ActionAdvertiser : Resource
     {
+        /// <summary> Radius in world units within which an actor is considered adjacent to this advertiser. </summary>
+        [ExportGroup("Settings")]
+        [Export(PropertyHint.Range, "0.0,32.0,0.1,or_greater")]
+        public Single InteractionRadius { get; set; } = 8f;
+
         /// <summary> The entity in the world that is hosting this advertiser. </summary>
-        protected readonly Entity _host;
+        protected Entity _host = null!;
 
         /// <summary> Cached unique instance ID of the host entity, used to disambiguate facts and actions across same-named hosts. </summary>
-        protected readonly UInt64 _hostId;
+        protected UInt64 _hostId;
+
+        /// <summary> Guards against the host binding being set more than once after deserialisation. </summary>
+        private Boolean _isInitialised = false;
 
 
-        /// <summary> Binds the advertiser to the entity that hosts it. </summary>
+        /// <summary> Binds the advertiser to the entity that will host it at runtime. </summary>
         /// <param name="host"> The entity at whose location the advertised actions will be performed. </param>
-        public ActionAdvertiser(Entity host)
+        public void Initialise(Entity host)
         {
-            _host = host;
-            _hostId = host.GetInstanceId();
+            if (!_isInitialised)
+            {
+                _host = host;
+                _hostId = host.GetInstanceId();
+                _isInitialised = true;
+            }
         }
 
 
@@ -30,7 +43,7 @@ namespace Vikare.Entities.GOAP.Advertisers
 
 
         /// <summary> The actions this object offers to the querying actor. </summary>
-        /// <param name="actor"> The actor requesting facts. </param>
+        /// <param name="actor"> The actor requesting actions. </param>
         /// <param name="existingFacts"> The facts these actions will be constructed from. </param>
         /// <returns> Zero or more actions whose preconditions and outcomes use facts from the querier's <c>AvailableFacts</c> vocabulary. </returns>
         public abstract IEnumerable<ActorAction> GetActions(Actor actor, Dictionary<String, ActorFact> existingFacts);

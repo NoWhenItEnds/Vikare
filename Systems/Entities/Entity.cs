@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Vikare.Entities.Components;
+using Vikare.Entities.GOAP.Advertisers;
 
 namespace Vikare.Entities
 {
@@ -19,6 +20,12 @@ namespace Vikare.Entities
 
         /// <summary> An array of all the components on the current entity. </summary>
         private readonly HashSet<EntityComponent> _components = new HashSet<EntityComponent>();
+
+        /// <summary> All advertisers attached to this entity; iterated by sensors to populate an actor's known-advertiser set. </summary>
+        private readonly HashSet<ActionAdvertiser> _advertisers = new HashSet<ActionAdvertiser>();
+
+        /// <summary> Exposes all advertisers on this entity for sensor iteration. </summary>
+        public IReadOnlyCollection<ActionAdvertiser> Advertisers => _advertisers;
 
 
         /// <summary> Try to add a new component of the given type. </summary>
@@ -98,6 +105,40 @@ namespace Vikare.Entities
 
             return removed;
         }
+
+
+        /// <summary> Adds a specific advertiser instance to this entity. </summary>
+        /// <param name="advertiser"> The advertiser to attach. </param>
+        /// <returns> True if the advertiser was added; false if the same instance was already present. </returns>
+        public Boolean TryAddAdvertiser(ActionAdvertiser advertiser) => _advertisers.Add(advertiser);
+
+
+        /// <summary> Removes a specific advertiser instance from this entity. </summary>
+        /// <param name="advertiser"> The advertiser to detach. </param>
+        /// <returns> True if the advertiser was found and removed; false if it was not present. </returns>
+        public Boolean RemoveAdvertiser(ActionAdvertiser advertiser) => _advertisers.Remove(advertiser);
+
+
+        /// <summary> Removes all advertisers whose runtime type is exactly <typeparamref name="T"/>. </summary>
+        /// <typeparam name="T"> The concrete advertiser type to remove. </typeparam>
+        /// <returns> True if at least one advertiser was removed; false if none matched. </returns>
+        public Boolean RemoveAdvertiser<T>() where T : ActionAdvertiser
+        {
+            List<ActionAdvertiser> matches = _advertisers.Where(x => x.GetType().Equals(typeof(T))).ToList();
+
+            foreach (ActionAdvertiser match in matches)
+            {
+                _advertisers.Remove(match);
+            }
+
+            return matches.Count > 0;
+        }
+
+
+        /// <summary> Returns the first advertiser of type <typeparamref name="T"/> attached to this entity, or null if none is present. </summary>
+        /// <typeparam name="T"> The advertiser type to find. </typeparam>
+        /// <returns> The first matching advertiser, or null. </returns>
+        public T? GetAdvertiser<T>() where T : ActionAdvertiser => _advertisers.OfType<T>().FirstOrDefault();
 
 
         /// <inheritdoc/>

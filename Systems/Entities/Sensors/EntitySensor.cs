@@ -3,47 +3,22 @@ using Godot;
 
 namespace Vikare.Entities.Sensors
 {
-    /// <summary>
-    /// Abstract base class for all physical perception sensors attached to an <see cref="Actor"/>.
-    /// <para>
-    /// Concrete sensors (e.g. <see cref="SightSensor"/>, <see cref="HearingSensor"/>) inherit this
-    /// class and configure their collision shape in <see cref="ConfigureShape"/>. Per-frame work
-    /// (such as rotating a cone) is handled by overriding <c>_PhysicsProcess</c> directly in the
-    /// subclass — no coordination from <see cref="Actor"/> is required.
-    /// </para>
-    /// <para>
-    /// This class subscribes to <see cref="Area2D.BodyEntered"/> and <see cref="Area2D.BodyExited"/>,
-    /// filters for <see cref="Entity"/>-derived bodies, then emits <see cref="EntityDetected"/>
-    /// and <see cref="EntityLost"/> so that listeners (e.g. <see cref="Actor"/>) can update their
-    /// memory without coupling to any specific sensor implementation.
-    /// </para>
-    /// <para>
-    /// Adding a new sensor type (smell, tremorsense, …) requires only a new subclass — no modification
-    /// of this class, <see cref="Actor"/>, or <see cref="Memory.EntityMemory"/>.
-    /// </para>
-    /// </summary>
+    /// <summary> Abstract base class for all physical perception sensors attached to an <see cref="Actor"/>. </summary>
     public abstract partial class EntitySensor : Area2D
     {
-        /// <summary>
-        /// Emitted when an <see cref="Entity"/>-derived body enters the sensor's detection volume.
-        /// The actor subscribes to this to call <see cref="Memory.EntityMemory.Remember"/>.
-        /// </summary>
+        /// <summary> Emitted when an <see cref="Entity"/>-derived body enters the sensor's detection volume. </summary>
+        /// <remarks> The actor subscribes to this to call <see cref="Memory.EntityMemory.Remember"/>. </remarks>
         [Signal] public delegate void EntityDetectedEventHandler(Entity entity);
 
-        /// <summary>
-        /// Emitted when an <see cref="Entity"/>-derived body exits the sensor's detection volume.
-        /// The actor subscribes to this to call <see cref="Memory.EntityMemory.Forget"/>.
-        /// </summary>
+        /// <summary> Emitted when an <see cref="Entity"/>-derived body exits the sensor's detection volume. </summary>
+        /// <remarks> The actor subscribes to this to call <see cref="Memory.EntityMemory.Forget"/>. </remarks>
         [Signal] public delegate void EntityLostEventHandler(Entity entity);
 
-        /// <summary>
-        /// Identifies which perceptual channel this sensor represents.
-        /// Stored on each <see cref="Memory.SensorMemory"/> for downstream use.
-        /// </summary>
+        /// <summary> Identifies which perceptual channel this sensor represents. </summary>
         public abstract SensorChannel Channel { get; }
 
 
-        /// <summary> Configures the collision shape and wires body-entered/exited callbacks. </summary>
+        /// <inheritdoc/>
         public override void _Ready()
         {
             CollisionLayer = 0;
@@ -60,7 +35,7 @@ namespace Vikare.Entities.Sensors
         }
 
 
-        /// <summary> Disconnects body callbacks to prevent signals firing after the node is freed. </summary>
+        /// <inheritdoc/>
         public override void _ExitTree()
         {
             BodyEntered -= OnBodyEntered;

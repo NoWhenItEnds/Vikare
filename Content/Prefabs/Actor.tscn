@@ -3,9 +3,13 @@
 [ext_resource type="Script" uid="uid://c718kcppwr7q5" path="res://Systems/Entities/Actor.cs" id="1_1nvag"]
 [ext_resource type="Script" uid="uid://7poweulbel25" path="res://Systems/Entities/States/Machines/HumanStateMachine.cs" id="2_jl7u3"]
 [ext_resource type="Script" uid="uid://bhlpjgupwhdbr" path="res://Systems/Entities/LayeredSprite.cs" id="4_g5nf1"]
+[ext_resource type="Script" uid="uid://cd4c4ic7s2mcn" path="res://Systems/Entities/Sensors/SightSensor.cs" id="4_h0nk2"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_g5nf1"]
 radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vhr8m"]
+radius = 32.0
 
 [node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "NavigationAgent", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")
@@ -33,3 +37,9 @@ debug_enabled = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1215470863]
 shape = SubResource("CircleShape2D_g5nf1")
+
+[node name="Sight Sensor" type="Area2D" parent="." unique_id=2089581710]
+script = ExtResource("4_h0nk2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sight Sensor" unique_id=2096315185]
+shape = SubResource("CircleShape2D_vhr8m")

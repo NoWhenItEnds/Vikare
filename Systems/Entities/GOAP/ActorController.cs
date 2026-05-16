@@ -36,10 +36,6 @@ namespace Vikare.Entities.GOAP
         public readonly HashSet<ActorGoal> OrganisationGoals = new HashSet<ActorGoal>();
 
 
-        /// <summary> Advertisers this actor knows about. Facts and actions are re-contributed each planning round so that forgotten advertisers are automatically pruned from the world-model. </summary>
-        /// <remarks> Empty until a sensor or other learning source populates it. </remarks>
-        private readonly HashSet<ActionAdvertiser> _knownAdvertisers = new HashSet<ActionAdvertiser>();   // TODO - Implement.
-
         /// <summary> The baseline facts built once at construction time; independent of any advertiser. </summary>
         private readonly Dictionary<String, ActorFact> _basicFacts;
 
@@ -173,21 +169,46 @@ namespace Vikare.Entities.GOAP
                 goalsToCheck = AvailableGoals;
             }
 
-            Dictionary<String, ActorFact> runtimeFacts = BuildRuntimeFacts();
-            HashSet<ActorAction> runtimeActions = BuildRuntimeActions(runtimeFacts);
+            HashSet<ActionAdvertiser> advertisers = BuildKnownAdvertisers();
+            Dictionary<String, ActorFact> runtimeFacts = BuildRuntimeFacts(advertisers);
+            HashSet<ActorAction> runtimeActions = BuildRuntimeActions(advertisers, runtimeFacts);
             ActionPlan? potentialPlan = _planner.BuildPlan(goalsToCheck, runtimeActions);
 
             CurrentPlan = potentialPlan;
         }
 
 
+        /// <summary> Builds the list of advertisers from the actor's memory component. </summary>
+        /// <returns> A list of the currently active advertisers. </returns>
+        private HashSet<ActionAdvertiser> BuildKnownAdvertisers()
+        {
+            HashSet<ActionAdvertiser> advertisers = new HashSet<ActionAdvertiser>();
+
+            MemoryComponent? memoryComponent = Actor.GetComponent<MemoryComponent>();
+
+            if (memoryComponent != null)
+            {
+                foreach (Entity entity in memoryComponent.GetEntities())
+                {
+                    foreach (ActionAdvertiser advertiser in entity.Advertisers)
+                    {
+                        advertisers.Add(advertiser);
+                    }
+                }
+            }
+
+            return advertisers;
+        }
+
+
         /// <summary> Builds the current facts from the stable baseline facts plus any facts contributed by currently-known advertisers. </summary>
+        /// <param name="advertisers"> A list of the currently active advertisers. </param>
         /// <returns> The constructed facts. </returns>
-        private Dictionary<String, ActorFact> BuildRuntimeFacts()
+        private Dictionary<String, ActorFact> BuildRuntimeFacts(IEnumerable<ActionAdvertiser> advertisers)
         {
             Dictionary<String, ActorFact> result = new Dictionary<string, ActorFact>(_basicFacts);
 
-            foreach (ActionAdvertiser advertiser in _knownAdvertisers)
+            foreach (ActionAdvertiser advertiser in advertisers)
             {
                 foreach (KeyValuePair<String, ActorFact> entry in advertiser.GetFacts(Actor))
                 {
@@ -203,14 +224,15 @@ namespace Vikare.Entities.GOAP
 
 
         /// <summary> Builds the full action set for one planning round by combining the actor's standing actions with any actions advertised by world objects currently known to this actor. </summary>
+        /// <param name="advertisers"> A list of the currently active advertisers. </param>
         /// <param name="runtimeFacts"> The current facts that exist at this point in runtime. </param>
         /// <returns> A new set containing all planning-eligible actions for this round. </returns>
         /// <remarks> Must be called after <see cref="BuildRuntimeFacts"/> so that advertiser-contributed facts are already present. </remarks>
-        private HashSet<ActorAction> BuildRuntimeActions(Dictionary<String, ActorFact> runtimeFacts)
+        private HashSet<ActorAction> BuildRuntimeActions(IEnumerable<ActionAdvertiser> advertisers, Dictionary<String, ActorFact> runtimeFacts)
         {
             HashSet<ActorAction> actions = new HashSet<ActorAction>(_basicActions);
 
-            foreach (ActionAdvertiser advertiser in _knownAdvertisers)
+            foreach (ActionAdvertiser advertiser in advertisers)
             {
                 foreach (ActorAction action in advertiser.GetActions(Actor, runtimeFacts))
                 {

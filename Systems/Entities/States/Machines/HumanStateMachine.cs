@@ -19,6 +19,7 @@ namespace Vikare.Entities.States.Machines
             RegisterState<BlockingState>();
             RegisterState<DodgingState>();
             RegisterState<AbilityState>();
+            RegisterState<UsingState>();
 
             SetInitialState<IdlingState>();
         }
@@ -31,12 +32,14 @@ namespace Vikare.Entities.States.Machines
             When<IdlingState>().On<SprintIntent>(i => i.Direction != Vector2.Zero).Transition<SprintingState>();
             When<IdlingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<IdlingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
+            When<IdlingState>().On<UseIntent>(_ => true).Transition<UsingState>();
             //When<IdlingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<WalkingState>().On<WalkIntent>(i => i.Direction == Vector2.Zero).Transition<IdlingState>();
             When<WalkingState>().On<SprintIntent>(i => i.Direction != Vector2.Zero).Transition<SprintingState>();
             When<WalkingState>().On<BlockIntent>(_ => true).Transition<BlockingState>();
             When<WalkingState>().On<DodgeIntent>(_ => true).Transition<DodgingState>();
+            When<IdlingState>().On<UseIntent>(_ => true).Transition<UsingState>();
             //When<WalkingState>().On<AbilityIntent>(i => _actor!.Abilities.Contains(i.Ability)).Transition<AbilityState>();
 
             When<SprintingState>().On<WalkIntent>(i => i.Direction == Vector2.Zero).Transition<IdlingState>();
