@@ -7,7 +7,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ed3ml"]
 size = Vector2(8, 8)
 
-[node name="Bed" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Collision", "Sprite")]
+[node name="Prop" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Collision", "Sprite")]
 script = ExtResource("1_64et8")
 Collision = NodePath("CollisionShape2D")
 Sprite = NodePath("LayeredSprite")

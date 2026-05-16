@@ -4,10 +4,16 @@
 [ext_resource type="Script" uid="uid://bphlf57en6quv" path="res://Systems/Managers/InputManager.cs" id="2_33ift"]
 [ext_resource type="Script" uid="uid://vg8sgbmj14b0" path="res://Systems/Managers/ActorManager.cs" id="3_3jj2t"]
 [ext_resource type="PackedScene" uid="uid://bwcux83rh4l5k" path="res://Content/Prefabs/Actor.tscn" id="3_hls3d"]
-[ext_resource type="PackedScene" uid="uid://c46lpqlqtuc8g" path="res://Content/Prefabs/Props/Bed.tscn" id="4_lxji3"]
+[ext_resource type="PackedScene" uid="uid://c46lpqlqtuc8g" path="res://Content/Prefabs/Prop.tscn" id="4_lxji3"]
+[ext_resource type="Script" uid="uid://dbut8aa7whnpk" path="res://Systems/Entities/GOAP/Advertisers/ActionAdvertiser.cs" id="5_1uamw"]
 [ext_resource type="TileSet" uid="uid://bukl6ltcw62v8" path="res://Content/Resources/TileSets/terrain.tres" id="5_mtcwf"]
 [ext_resource type="Script" uid="uid://cdf4ml8swb5i8" path="res://Systems/Managers/CameraManager.cs" id="6_13v0n"]
+[ext_resource type="Script" uid="uid://f05ykj8v1uqg" path="res://Systems/Entities/GOAP/Advertisers/StaminaRestoringAdvertiser.cs" id="6_y3sow"]
 [ext_resource type="Script" uid="uid://dbiarlwwg818l" path="res://Systems/Managers/UIManager.cs" id="7_ubvt2"]
+
+[sub_resource type="Resource" id="Resource_1uamw"]
+script = ExtResource("6_y3sow")
+metadata/_custom_type_script = "uid://f05ykj8v1uqg"
 
 [node name="Game" type="Node" unique_id=1020175912]
 script = ExtResource("1_k1v7w")
@@ -24,7 +30,8 @@ tile_set = ExtResource("5_mtcwf")
 [node name="Props" type="Node2D" parent="." unique_id=1084491845]
 
 [node name="Bed" parent="Props" unique_id=1644200139 instance=ExtResource("4_lxji3")]
-position = Vector2(240, 240)
+position = Vector2(200, 300)
+AdvertiserBlueprints = Array[ExtResource("5_1uamw")]([SubResource("Resource_1uamw")])
 
 [node name="Actors" type="Node2D" parent="." unique_id=1089238730]
 script = ExtResource("3_3jj2t")
