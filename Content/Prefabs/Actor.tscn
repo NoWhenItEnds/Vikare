@@ -9,7 +9,7 @@
 radius = 8.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vhr8m"]
-radius = 32.0
+radius = 3200.0
 
 [node name="Actor" type="CharacterBody2D" unique_id=1644200139 node_paths=PackedStringArray("Machine", "NavigationAgent", "Collision", "Sprite")]
 script = ExtResource("1_1nvag")

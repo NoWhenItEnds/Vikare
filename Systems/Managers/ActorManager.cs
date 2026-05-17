@@ -29,6 +29,10 @@ namespace Vikare.Managers
         public Actor? Player { get; private set; } = null;  // TODO - Use the subscribe from InputManager.
 
 
+        /// <summary> An array of all the currently accessible / active actors. </summary>
+        public IEnumerable<Actor> Actors => _actors.Keys;
+
+
         /// <summary> A map between actors and their linked controllers. </summary>
         public readonly Dictionary<Actor, ActorController?> _actors = new Dictionary<Actor, ActorController?>();
 
@@ -40,7 +44,7 @@ namespace Vikare.Managers
             {
                 Vector2 position = GlobalPosition.RandomOffset(_spawnRadius);
                 Actor actor = SpawnActor(position);
-                ActorController controller = new ActorController(actor, false);
+                ActorController controller = new ActorController(actor, true);
                 _actors.Add(actor, controller);
             }
 
@@ -88,5 +92,8 @@ namespace Vikare.Managers
 
             return actor;
         }
+
+
+        public Boolean TryGetController(Actor actor, out ActorController? controller) => _actors.TryGetValue(actor, out controller);
     }
 }

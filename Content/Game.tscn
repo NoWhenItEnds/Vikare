@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://cdf4ml8swb5i8" path="res://Systems/Managers/CameraManager.cs" id="6_13v0n"]
 [ext_resource type="Script" uid="uid://f05ykj8v1uqg" path="res://Systems/Entities/GOAP/Advertisers/StaminaRestoringAdvertiser.cs" id="6_y3sow"]
 [ext_resource type="Script" uid="uid://dbiarlwwg818l" path="res://Systems/Managers/UIManager.cs" id="7_ubvt2"]
+[ext_resource type="PackedScene" uid="uid://dhitxjo7mda44" path="res://Content/Prefabs/UI/ActorDebugWindow.tscn" id="11_y3sow"]
 
 [sub_resource type="Resource" id="Resource_1uamw"]
 script = ExtResource("6_y3sow")
@@ -36,6 +37,7 @@ AdvertiserBlueprints = Array[ExtResource("5_1uamw")]([SubResource("Resource_1uam
 [node name="Actors" type="Node2D" parent="." unique_id=1089238730]
 script = ExtResource("3_3jj2t")
 _actorPrefab = ExtResource("3_hls3d")
+_spawnCount = 1
 
 [node name="Camera" type="Node2D" parent="." unique_id=789845675 node_paths=PackedStringArray("_mainCamera")]
 script = ExtResource("6_13v0n")
@@ -57,6 +59,7 @@ grow_vertical = 2
 script = ExtResource("7_ubvt2")
 _timeLabel = NodePath("HUD/HBoxContainer/Time Label")
 _memoryLabel = NodePath("HUD/HBoxContainer/Memory Label")
+_actorDebugWindowPrefab = ExtResource("11_y3sow")
 
 [node name="HUD" type="Control" parent="CanvasLayer/UI" unique_id=782899131]
 layout_mode = 1

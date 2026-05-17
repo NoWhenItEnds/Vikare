@@ -341,8 +341,13 @@ namespace Vikare.Entities.GOAP
                 .Build());
 
             goals.Add(new ActorGoal.Builder("KeepEntertained", GoalSource.BASIC)
-                .WithUtility(MaxDriveUtility)
+                .WithUtility(90f)
                 .WithDesiredOutcome(_basicFacts["is_entertained"])
+                .Build());
+
+            goals.Add(new ActorGoal.Builder("StayFresh", GoalSource.BASIC)
+                .WithUtility(MaxDriveUtility)
+                .WithDesiredOutcome(_basicFacts["is_fresh"])
                 .Build());
 
             goals.Add(new ActorGoal.Builder("StayHydrated", GoalSource.BASIC)

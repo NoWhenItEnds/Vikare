@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://dhitxjo7mda44"]
+
+[ext_resource type="Script" uid="uid://cp6g7fhvrgc4i" path="res://Systems/UI/Windows/ActorDebugWindow.cs" id="1_mpuhd"]
+
+[node name="ActorDebugWindow" type="PanelContainer" unique_id=1881497284 node_paths=PackedStringArray("_needsLabel", "_attributesLabel")]
+offset_right = 256.0
+offset_bottom = 256.0
+script = ExtResource("1_mpuhd")
+_needsLabel = NodePath("MarginContainer/TabContainer/Basic/Needs")
+_attributesLabel = NodePath("MarginContainer/TabContainer/Basic/Attributes")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=2074256985]
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer" unique_id=1189864141]
+layout_mode = 2
+current_tab = 0
+
+[node name="Basic" type="HBoxContainer" parent="MarginContainer/TabContainer" unique_id=666397389]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Needs" type="RichTextLabel" parent="MarginContainer/TabContainer/Basic" unique_id=1880157200]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+text = "[color=green]is_hungry[/color]
+[color=red]is_satisfied[/color]"
+
+[node name="Attributes" type="RichTextLabel" parent="MarginContainer/TabContainer/Basic" unique_id=54965981]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+
+[node name="GOAP" type="HBoxContainer" parent="MarginContainer/TabContainer" unique_id=728534518]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Facts" type="RichTextLabel" parent="MarginContainer/TabContainer/GOAP" unique_id=753285284]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+text = "[color=green]is_hungry[/color]
+[color=red]is_satisfied[/color]"
+
+[node name="Actions" type="RichTextLabel" parent="MarginContainer/TabContainer/GOAP" unique_id=253545245]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+
+[node name="Goals" type="RichTextLabel" parent="MarginContainer/TabContainer/GOAP" unique_id=923549256]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
