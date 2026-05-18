@@ -2,12 +2,12 @@
 
 [ext_resource type="Script" uid="uid://cp6g7fhvrgc4i" path="res://Systems/UI/Windows/ActorDebugWindow.cs" id="1_mpuhd"]
 
-[node name="ActorDebugWindow" type="PanelContainer" unique_id=1881497284 node_paths=PackedStringArray("_needsLabel", "_attributesLabel")]
-offset_right = 256.0
+[node name="ActorDebugWindow" type="PanelContainer" unique_id=1881497284 node_paths=PackedStringArray("_stateLabel", "_needsLabel")]
+offset_right = 512.0
 offset_bottom = 256.0
 script = ExtResource("1_mpuhd")
+_stateLabel = NodePath("MarginContainer/TabContainer/Basic/State")
 _needsLabel = NodePath("MarginContainer/TabContainer/Basic/Needs")
-_attributesLabel = NodePath("MarginContainer/TabContainer/Basic/Attributes")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=2074256985]
 layout_mode = 2
@@ -20,17 +20,17 @@ current_tab = 0
 layout_mode = 2
 metadata/_tab_index = 0
 
+[node name="State" type="RichTextLabel" parent="MarginContainer/TabContainer/Basic" unique_id=54965981]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+
 [node name="Needs" type="RichTextLabel" parent="MarginContainer/TabContainer/Basic" unique_id=1880157200]
 layout_mode = 2
 size_flags_horizontal = 3
 bbcode_enabled = true
 text = "[color=green]is_hungry[/color]
 [color=red]is_satisfied[/color]"
-
-[node name="Attributes" type="RichTextLabel" parent="MarginContainer/TabContainer/Basic" unique_id=54965981]
-layout_mode = 2
-size_flags_horizontal = 3
-bbcode_enabled = true
 
 [node name="GOAP" type="HBoxContainer" parent="MarginContainer/TabContainer" unique_id=728534518]
 visible = false

@@ -40,7 +40,8 @@ namespace Vikare.Entities.GOAP.Strategies
         public void Update(Double delta)
         {
             Vector2 nextPosition = _actor.NavigationAgent.GetNextPathPosition();
-            WalkIntent intent = new WalkIntent(nextPosition.Normalized());
+            Vector2 direction = _actor.GlobalPosition.DirectionTo(nextPosition);
+            WalkIntent intent = new WalkIntent(direction);
             _actor.Machine.HandleIntent(intent);
         }
 

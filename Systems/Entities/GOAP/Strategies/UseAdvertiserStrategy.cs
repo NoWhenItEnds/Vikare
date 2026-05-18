@@ -1,5 +1,4 @@
 using System;
-using Godot;
 using Vikare.Entities.States;
 
 namespace Vikare.Entities.GOAP.Strategies
@@ -9,7 +8,7 @@ namespace Vikare.Entities.GOAP.Strategies
     public class UseAdvertiserStrategy : IActionStrategy
     {
         /// <inheritdoc/>
-        public Boolean IsValid { get; private set; } = true;
+        public Boolean IsValid => _interactionRadiusSquared < _actor.GlobalPosition.DistanceSquaredTo(_host.GlobalPosition);
 
         /// <inheritdoc/>
         public Boolean IsComplete { get; private set; } = false;
@@ -73,11 +72,7 @@ namespace Vikare.Entities.GOAP.Strategies
         }
 
 
-        /// <summary>
-        /// Resets elapsed time, clears the completion flag, clears the abort-notified flag, and
-        /// transitions the actor's FSM into <c>UsingState</c> via <see cref="UseIntent"/>.
-        /// Does not restore validity — once invalid, the strategy stays invalid so the planner re-plans.
-        /// </summary>
+        /// <inheritdoc/>
         public void Start()
         {
             _elapsed = 0;
@@ -87,25 +82,13 @@ namespace Vikare.Entities.GOAP.Strategies
         }
 
 
-        /// <summary>
-        /// Validates proximity and host lifetime, advances the elapsed timer, and fires
-        /// <see cref="_onTick"/> each frame; fires <see cref="_onComplete"/> exactly once when
-        /// the duration is reached. Calls <c>ChangeState&lt;IdlingState&gt;()</c> (at most once,
-        /// guarded by <see cref="_abortNotified"/>) when proximity or host validity fails.
-        /// </summary>
-        /// <param name="delta"> Time in seconds since the last update. </param>
+        /// <inheritdoc/>
         public void Update(Double delta)
         {
-            Boolean hostAlive = GodotObject.IsInstanceValid(_host);
-            Boolean inRange = false;
+            Single distanceSquared = _actor.GlobalPosition.DistanceSquaredTo(_host.GlobalPosition);
+            Boolean inRange = distanceSquared <= _interactionRadiusSquared;
 
-            if (hostAlive)
-            {
-                Single distanceSquared = _actor.GlobalPosition.DistanceSquaredTo(_host.GlobalPosition);
-                inRange = distanceSquared <= _interactionRadiusSquared;
-            }
-
-            if (hostAlive && inRange)
+            if (inRange)
             {
                 _onTick((Single)delta);
                 _elapsed += delta;
@@ -118,8 +101,6 @@ namespace Vikare.Entities.GOAP.Strategies
             }
             else
             {
-                IsValid = false;
-
                 if (!_abortNotified)
                 {
                     _actor.Machine.ChangeState<IdlingState>();
@@ -129,13 +110,11 @@ namespace Vikare.Entities.GOAP.Strategies
         }
 
 
-        /// <summary>
-        /// Transitions the actor's FSM out of <c>UsingState</c> and back to <c>IdlingState</c>
-        /// directly via <c>ChangeState</c>. Called by <c>ActorController</c> when <see cref="IsComplete"/> is true.
-        /// </summary>
+        /// <inheritdoc/>
         public void Stop()
         {
             _actor.Machine.ChangeState<IdlingState>();
+            IsComplete = false;
         }
     }
 }

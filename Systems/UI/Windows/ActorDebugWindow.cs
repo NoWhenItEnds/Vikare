@@ -13,9 +13,10 @@ namespace Vikare.UI.Windows
     {
         [ExportGroup("Nodes")]
         [ExportSubgroup("Basic")]
+        [Export] private RichTextLabel _stateLabel = null!;
+
         [Export] private RichTextLabel _needsLabel = null!;
 
-        [Export] private RichTextLabel _attributesLabel = null!;
 
         [ExportSubgroup("GOAP")]
         [Export] private RichTextLabel _factsLabel = null!;
@@ -52,6 +53,9 @@ namespace Vikare.UI.Windows
             {
                 // Update position.
                 GlobalPosition = _actor.GetGlobalTransformWithCanvas().Origin;
+
+                // Update state.
+                _stateLabel.Text = _actor.Machine.CurrentState;
 
                 // Update needs.
                 StringBuilder needsBuilder = new StringBuilder("[b]Needs[/b]\n");

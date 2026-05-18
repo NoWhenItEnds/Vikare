@@ -37,6 +37,9 @@ namespace Vikare.Entities.States
         public abstract String Race { get; }
 
 
+        public String CurrentState => _currentState != null ? _currentState.GetType().Name : "null";
+
+
         /// <summary> Registered transitions consulted in order on each <see cref="HandleIntent"/> call. </summary>
         private readonly List<TransitionEntry> _transitions = new List<TransitionEntry>();
 
