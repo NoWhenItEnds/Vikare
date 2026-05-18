@@ -22,6 +22,9 @@ namespace Vikare.Entities.GOAP
         /// <summary> Whether the action's strategy has run to completion. </summary>
         public Boolean IsComplete => _strategy.IsComplete;
 
+        /// <summary> Whether the underlying strategy is still viable; a false reading means the strategy aborted mid-run and the action must be torn down rather than awaited. </summary>
+        public Boolean IsValid => _strategy.IsValid;
+
 
         /// <summary> The strategy that drives this action's execution. </summary>
         private readonly IActionStrategy _strategy;

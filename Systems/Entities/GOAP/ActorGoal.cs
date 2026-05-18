@@ -61,20 +61,11 @@ namespace Vikare.Entities.GOAP
             }
 
 
-            /// <summary> Sets a dynamic utility function evaluated each planning round. </summary>
-            /// <param name="utility"> Delegate returning the goal's current score; higher is more attractive. </param>
-            public Builder WithUtility(Func<Single> utility)
+            /// <summary> Sets a flat utility from a named priority tier. </summary>
+            /// <param name="tier"> The tier this goal sits in; all goals at the same tier compete on equal footing. </param>
+            public Builder WithTier(GoalTier tier)
             {
-                _goal.Utility = utility;
-                return this;
-            }
-
-
-            /// <summary> Sets a fixed utility score, wrapped in a closure. </summary>
-            /// <param name="utility"> Constant utility score; higher means more attractive. </param>
-            public Builder WithUtility(Single utility)
-            {
-                _goal.Utility = () => utility;
+                _goal.Utility = () => (Single)tier;
                 return this;
             }
 
@@ -115,10 +106,32 @@ namespace Vikare.Entities.GOAP
     public enum GoalSource
     {
         /// <summary> Basic upkeep goals such as eating or resting. </summary>
-        BASIC,
+        Basic,
+
         /// <summary> Personal goals related to the actor's individual desires. </summary>
-        PERSONAL,
+        Personal,
+
         /// <summary> Goals given by the organisation controlling the actor. </summary>
-        ORGANISATION
+        Organisation
+    }
+
+
+    /// <summary> Priority bands for goal utility. Goals at the same tier are considered equally important; the planner's tiebreak rule decides which is pursued first when several are eligible. </summary>
+    public enum GoalTier
+    {
+        /// <summary> Fallback only — picked when nothing else applies. </summary>
+        None = 0,
+
+        /// <summary> Background desires; yield to anything else. </summary>
+        Trivial = 25,
+
+        /// <summary> Social and lifestyle goals; everyday quality of life. </summary>
+        Comfort = 50,
+
+        /// <summary> Routine self-maintenance — non-critical needs and habitual tasks. </summary>
+        Routine = 75,
+
+        /// <summary> Survival pressure; displaces anything below. </summary>
+        Critical = 100,
     }
 }

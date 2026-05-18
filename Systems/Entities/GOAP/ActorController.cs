@@ -48,25 +48,6 @@ namespace Vikare.Entities.GOAP
         /// <summary> When true, emits trace logs for plan and action transitions. </summary>
         private Boolean _useLogging = false;
 
-        /// <summary>
-        /// The factor by which a candidate goal's utility must exceed the current goal's utility
-        /// to trigger an interrupt; prevents jitter when two goals have near-equal scores.
-        /// </summary>
-        private const Single _utilityInterruptMargin = 1.1f;    // TODO - Move to own class.
-
-        /// <summary>
-        /// Ceiling for drive-insistent utility functions; entertainment and hydration both scale
-        /// against this value so they compete on equal footing.
-        /// Formula: <c>MaxDriveUtility * (1f - need.Percent)</c>.
-        /// </summary>
-        private const Single MaxDriveUtility = 100f;
-
-        /// <summary>
-        /// Utility for the no-op fallback goal; zero ensures it is picked only when no other
-        /// goal is in scope.
-        /// </summary>
-        private const Single WatchPaintDryUtility = 0f;
-
 
         /// <summary> Uses a GOAP implementation to control an entity. The AI brain that controls a unit. </summary>
         /// <param name="actor"> The entity this controller is responsible for controlling. </param>
@@ -82,9 +63,10 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Forces a hard reset of the current plan so the next ProcessPlan call starts a fresh planning cycle. </summary>
+        /// <summary> Forces a hard reset of the current plan so the next ProcessPlan call starts a fresh planning cycle. Stops the running strategy before clearing state so no side-effects are leaked, and archives the current goal so it will be re-considered on the next planning round. See <see cref="AbortCurrentPlan"/> for the abort path that does not archive the goal. </summary>
         public void ReevaluatePlan()
         {
+            CurrentAction?.Stop();
             ClearCurrentPlanState();
             ArchiveCurrentGoal();
         }
@@ -98,22 +80,35 @@ namespace Vikare.Entities.GOAP
         }
 
 
+        /// <summary> Tears down the in-flight plan without claiming the goal was achieved. Use this path when a strategy aborts unexpectedly — in contrast to <see cref="ReevaluatePlan"/>, the goal is not archived so it remains eligible for re-planning on the next tick. </summary>
+        /// <remarks> Re-planning is preferred to archiving because a strategy abort is usually a transient world-state condition (host destroyed, moved out of range) that may not apply to the next plan; archiving would suppress the goal beyond the abort window. </remarks>
+        private void AbortCurrentPlan()
+        {
+            CurrentAction?.Stop();
+            ClearCurrentPlanState();
+            CurrentGoal = null;
+        }
+
+
         /// <summary> Processes the actor's plan for one tick. </summary>
         /// <param name="delta"> Time elapsed since the previous tick, in seconds. </param>
         public void ProcessPlan(Double delta)
         {
             if (CurrentAction == null)
             {
-                if (_useLogging) { GD.Print($"{Actor.Name} -> Calculating new plan..."); }
-                CalculatePlan();
+                if (CurrentPlan == null || CurrentPlan.Actions.Count == 0)
+                {
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Calculating new plan..."); }
+                    CalculatePlan();
+                }
 
                 if (CurrentPlan != null && CurrentPlan.Actions.Count > 0)
                 {
                     CurrentGoal = CurrentPlan.ActorGoal;
                     if (_useLogging) { GD.Print($"{Actor.Name} -> Goal: {CurrentGoal.Name} with {CurrentPlan.Actions.Count} actions in plan."); }
 
-                    CurrentAction = CurrentPlan.Actions.Pop();
-                    if (_useLogging) { GD.Print($"{Actor.Name} -> Popped action: {CurrentAction.Name}."); }
+                    CurrentAction = CurrentPlan.DequeueNext();
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Dequeued action: {CurrentAction.Name}."); }
 
                     Boolean preconditionsMet = CurrentAction.Preconditions.All(precondition => precondition.Evaluate());
 
@@ -125,6 +120,7 @@ namespace Vikare.Entities.GOAP
                     {
                         if (_useLogging) { GD.Print($"{Actor.Name} -> Goal preconditions not met, clearing current action and goal."); }
 
+                        // Preconditions failed before Start() — the strategy has no state to tear down.
                         ClearCurrentPlanState();
                         CurrentGoal = null;
                     }
@@ -133,20 +129,30 @@ namespace Vikare.Entities.GOAP
 
             if (CurrentPlan != null && CurrentAction != null)
             {
-                CurrentAction.Update(delta);
-
-                if (CurrentAction.IsComplete)
+                if (!CurrentAction.IsValid)
                 {
-                    if (_useLogging) { GD.Print($"{Actor.Name} -> Action, {CurrentAction.Name}, complete."); }
+                    if (_useLogging) { GD.Print($"{Actor.Name} -> Action, {CurrentAction.Name}, strategy aborted. Tearing down plan."); }
 
-                    CurrentAction.Stop();
-                    CurrentAction = null;
+                    AbortCurrentPlan();
+                }
+                else
+                {
+                    CurrentAction.Update(delta);
 
-                    if (CurrentPlan.Actions.Count == 0)
+                    if (CurrentAction.IsComplete)
                     {
-                        if (_useLogging) { GD.Print($"{Actor.Name} -> Plan complete!"); }
+                        if (_useLogging) { GD.Print($"{Actor.Name} -> Action, {CurrentAction.Name}, complete."); }
 
-                        ArchiveCurrentGoal();
+                        CurrentAction.Stop();
+                        CurrentAction = null;
+
+                        if (CurrentPlan.Actions.Count == 0)
+                        {
+                            if (_useLogging) { GD.Print($"{Actor.Name} -> Plan complete!"); }
+
+                            ArchiveCurrentGoal();
+                            CurrentPlan = null;
+                        }
                     }
                 }
             }
@@ -154,25 +160,18 @@ namespace Vikare.Entities.GOAP
 
 
         /// <summary> Attempts to calculate a new plan. Rebuilds from scratch each round so that facts and actions from forgotten advertisers are not carried forward. </summary>
-        /// <remarks> When a goal is already active, only goals that exceed its utility by at least <see cref="_utilityInterruptMargin"/> are considered, preventing jitter. </remarks>
+        /// <remarks> Callers must null <see cref="CurrentGoal"/> before invoking; planning always runs against the full <see cref="AvailableGoals"/> set. Mid-plan interruption based on a higher-utility goal should be implemented as a separate mechanism rather than as a side-effect of this method. </remarks>
         private void CalculatePlan()
         {
-            HashSet<ActorGoal> goalsToCheck;
-
-            if (CurrentGoal != null)
-            {
-                Single currentUtility = CurrentGoal.Utility();
-                goalsToCheck = new HashSet<ActorGoal>(AvailableGoals.Where(g => g.Utility() > currentUtility * _utilityInterruptMargin));
-            }
-            else
-            {
-                goalsToCheck = AvailableGoals;
-            }
-
             HashSet<ActionAdvertiser> advertisers = BuildKnownAdvertisers();
             Dictionary<String, ActorFact> runtimeFacts = BuildRuntimeFacts(advertisers);
             HashSet<ActorAction> runtimeActions = BuildRuntimeActions(advertisers, runtimeFacts);
-            ActionPlan? potentialPlan = _planner.BuildPlan(goalsToCheck, runtimeActions);
+
+            IEnumerable<ActorGoal> orderedGoals = AvailableGoals
+                .OrderByDescending(g => g.Utility())
+                .ThenByDescending(g => RecencyIndex(g));
+
+            ActionPlan? potentialPlan = _planner.BuildPlan(orderedGoals, runtimeActions);
 
             CurrentPlan = potentialPlan;
         }
@@ -262,6 +261,17 @@ namespace Vikare.Entities.GOAP
         }
 
 
+        /// <summary> Returns the position of <paramref name="goal"/> within <see cref="PreviousGoals"/>, where 0 means most-recently-pursued. </summary>
+        /// <param name="goal"> The goal to look up. </param>
+        /// <returns> A recency rank suitable as a tiebreak sort key. </returns>
+        private Int32 RecencyIndex(ActorGoal goal)
+        {
+            Int32 index = Array.IndexOf(PreviousGoals, goal);
+            Int32 result = index < 0 ? Int32.MaxValue : index;
+            return result;
+        }
+
+
         /// <summary> Builds the actor's baseline facts — those that are always present regardless of which advertisers are known. </summary>
         /// <returns> A dictionary of baseline facts keyed by fact name. </returns>
         private Dictionary<String, ActorFact> BuildBasicFacts()
@@ -335,25 +345,30 @@ namespace Vikare.Entities.GOAP
         {
             HashSet<ActorGoal> goals = new HashSet<ActorGoal>();
 
-            goals.Add(new ActorGoal.Builder("WatchPaintDry", GoalSource.BASIC)
-                .WithUtility(WatchPaintDryUtility)
+            goals.Add(new ActorGoal.Builder("WatchPaintDry", GoalSource.Basic)
+                .WithTier(GoalTier.None)
                 .WithDesiredOutcome(_basicFacts["nothing"])
                 .Build());
 
-            goals.Add(new ActorGoal.Builder("KeepEntertained", GoalSource.BASIC)
-                .WithUtility(90f)
+            goals.Add(new ActorGoal.Builder("KeepEntertained", GoalSource.Basic)
+                .WithTier(GoalTier.Comfort)
                 .WithDesiredOutcome(_basicFacts["is_entertained"])
                 .Build());
 
-            goals.Add(new ActorGoal.Builder("StayFresh", GoalSource.BASIC)
-                .WithUtility(MaxDriveUtility)
-                .WithDesiredOutcome(_basicFacts["is_fresh"])
-                .Build());
+            NeedsComponent? needsComponent = Actor.GetComponent<NeedsComponent>();
 
-            goals.Add(new ActorGoal.Builder("StayHydrated", GoalSource.BASIC)
-                .WithUtility(MaxDriveUtility)
-                .WithDesiredOutcome(_basicFacts["is_hydrated"])
-                .Build());
+            if (needsComponent != null)
+            {
+                goals.Add(new ActorGoal.Builder("StayFresh", GoalSource.Basic)
+                    .WithTier(GoalTier.Critical)
+                    .WithDesiredOutcome(_basicFacts["is_fresh"])
+                    .Build());
+
+                goals.Add(new ActorGoal.Builder("StayHydrated", GoalSource.Basic)
+                    .WithTier(GoalTier.Critical)
+                    .WithDesiredOutcome(_basicFacts["is_hydrated"])
+                    .Build());
+            }
 
             return goals.ToArray();
         }

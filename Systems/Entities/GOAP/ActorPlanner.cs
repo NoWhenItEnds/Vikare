@@ -12,22 +12,18 @@ namespace Vikare.Entities.GOAP
         private const Int32 _maxPlanDepth = 32;
 
 
-        /// <summary> Attempts to build a plan for the actor's highest-utility unsatisfied goal. Iterates goals in descending utility order and runs a DFS through the action graph, returning the first satisfiable plan found. </summary>
-        /// <param name="goals"> The goals to plan for. </param>
+        /// <summary> Attempts to build a plan for the first satisfiable goal in the provided sequence. Runs a DFS through the action graph for each goal in order, returning the first satisfiable plan found. </summary>
+        /// <param name="orderedGoals"> The goals to plan for, in the order the caller wants them attempted. The planner takes the first one whose plan is satisfiable. </param>
         /// <param name="actions"> The full action set available this planning round, including advertised actions. </param>
         /// <returns> The constructed plan, or null if no satisfiable plan was found. </returns>
-        /// <remarks> A <see cref="PlanningState"/> snapshot is constructed once per call so every goal attempt and DFS branch sees a consistent world view. Goal utilities are re-evaluated live. </remarks>
-        public ActionPlan? BuildPlan(HashSet<ActorGoal> goals, HashSet<ActorAction> actions)
+        /// <remarks> A <see cref="PlanningState"/> snapshot is constructed once per call so every goal attempt and DFS branch sees a consistent world view. </remarks>
+        public ActionPlan? BuildPlan(IEnumerable<ActorGoal> orderedGoals, HashSet<ActorAction> actions)
         {
             PlanningState state = new PlanningState();
 
-            IOrderedEnumerable<ActorGoal> orderedGoals = goals
-                .Where(g => !state.SatisfiedBy(g.DesiredOutcomes))
-                .OrderByDescending(g => g.Utility());
-
             ActionPlan? result = null;
 
-            foreach (ActorGoal goal in orderedGoals)
+            foreach (ActorGoal goal in orderedGoals.Where(g => !state.SatisfiedBy(g.DesiredOutcomes)))
             {
                 if (result == null)
                 {
@@ -39,8 +35,8 @@ namespace Vikare.Entities.GOAP
                     if (terminals.Count > 0)
                     {
                         GraphNode cheapestTerminal = terminals.OrderBy(n => n.Cost).First();
-                        Stack<ActorAction> actionStack = ReconstructPath(cheapestTerminal);
-                        result = new ActionPlan(goal, actionStack, cheapestTerminal.Cost);
+                        Queue<ActorAction> actionQueue = ReconstructPath(cheapestTerminal);
+                        result = new ActionPlan(goal, actionQueue, cheapestTerminal.Cost);
                     }
                 }
             }
@@ -49,21 +45,21 @@ namespace Vikare.Entities.GOAP
         }
 
 
-        /// <summary> Walks parent pointers from a terminal node up to the root, building the action stack in execution order (first action on top). </summary>
+        /// <summary> Walks parent pointers from a terminal node up to the root, returning a queue whose head is the first action to execute. </summary>
         /// <param name="terminal"> The fully-satisfied leaf node to reconstruct from. </param>
-        /// <returns> A stack whose top element is the first action to execute. </returns>
-        private Stack<ActorAction> ReconstructPath(GraphNode terminal)
+        /// <returns> A queue ordered so that <see cref="Queue{T}.Dequeue"/> returns actions in execution order. </returns>
+        private Queue<ActorAction> ReconstructPath(GraphNode terminal)
         {
-            Stack<ActorAction> actionStack = new Stack<ActorAction>();
+            Queue<ActorAction> actionQueue = new Queue<ActorAction>();
             GraphNode? current = terminal;
 
             while (current != null && current.Action != null)
             {
-                actionStack.Push(current.Action);
+                actionQueue.Enqueue(current.Action);
                 current = current.Parent;
             }
 
-            return actionStack;
+            return actionQueue;
         }
 
 
@@ -137,22 +133,34 @@ namespace Vikare.Entities.GOAP
         /// <summary> The goal this plan is attempting to satisfy. </summary>
         public ActorGoal ActorGoal { get; }
 
-        /// <summary> The ordered actions required to satisfy the goal. </summary>
-        public Stack<ActorAction> Actions { get; }
+        /// <summary> Read-only view of the remaining actions; exposes <c>Count</c> and enumeration but hides mutation. </summary>
+        public IReadOnlyCollection<ActorAction> Actions => _actions;
 
         /// <summary> The sum of all action costs in the plan. </summary>
         public Single TotalCost { get; set; }
 
+        /// <summary> The backing queue; private so only <see cref="DequeueNext"/> can remove actions. </summary>
+        private readonly Queue<ActorAction> _actions;
+
 
         /// <summary> Creates a plan pairing a goal with its ordered action sequence and total cost. </summary>
         /// <param name="goal"> The goal this plan is attempting to satisfy. </param>
-        /// <param name="actions"> The ordered actions required to satisfy the goal. </param>
+        /// <param name="actions"> The ordered actions required to satisfy the goal. The caller must not retain a reference after construction. </param>
         /// <param name="totalCost"> The sum of all action costs in the plan. </param>
-        public ActionPlan(ActorGoal goal, Stack<ActorAction> actions, Single totalCost)
+        public ActionPlan(ActorGoal goal, Queue<ActorAction> actions, Single totalCost)
         {
             ActorGoal = goal;
-            Actions = actions;
+            _actions = actions;
             TotalCost = totalCost;
+        }
+
+
+        /// <summary> Removes and returns the next action in execution order, reducing <see cref="Actions"/>.<c>Count</c> by one. </summary>
+        /// <returns> The next <see cref="ActorAction"/> to execute. </returns>
+        /// <exception cref="InvalidOperationException"> Thrown by the underlying queue when <see cref="Actions"/> is empty. </exception>
+        public ActorAction DequeueNext()
+        {
+            return _actions.Dequeue();
         }
     }
 
